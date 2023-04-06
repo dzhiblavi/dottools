@@ -1,4 +1,4 @@
-#!/usr/bin/env bash -i
+#!/usr/bin/env -S bash -i
 set -eu
 
 br_import 'print'
