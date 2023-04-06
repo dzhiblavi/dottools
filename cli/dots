@@ -55,7 +55,7 @@ def main(args):
         args.dry_run = True
 
     context = dd_context.Context(
-        config_path=args.config_file,
+        config_path=os.path.realpath(args.config_file),
         dot_root=os.path.realpath(args.root),
         dry_run=args.dry_run,
     )

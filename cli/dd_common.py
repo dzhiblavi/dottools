@@ -15,7 +15,8 @@ def _create_parent_dir_if_not_exists(context, file_path):
         return
 
     context.logger.info('creating parent directory for %s')
-    os.makedirs(dir_name, exist_ok=True)
+    if not context.dry_run:
+        os.makedirs(dir_name, exist_ok=True)
 
 
 def try_remove(context, file):
