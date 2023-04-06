@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import argparse
+import subprocess
+import glob
+import shutil
+import socket
+import collections
+
+import dd_diff
+import dd_colors
+import dd_context
+import dd_bashrc
+import dd_dots
+import dd_env
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='The .bashrc and dottools installer tool')
+
+    parser.add_argument(
+        '--config-file', '-c',
+        help='Configuration description (.yaml)',
+        default=os.getenv(dd_env.CONFIG_FILE_PATH_ENV_VAR),
+    )
+    parser.add_argument(
+        '--root', '-r',
+        help='dottols root directory',
+        default=os.getenv(
+            dd_env.ROOT_PATH_ENV_VAR,
+            default=os.path.expanduser('~/dottools'),
+        ),
+    )
+    parser.add_argument(
+        '--dry-run',
+        help='Only print which actions will be done instead of doint anything',
+        default=False,
+        action='store_true',
+    )
+
+    subparsers = parser.add_subparsers(title='Commands', dest='command')
+
+    bashrc_parser = subparsers.add_parser('bashrc', help='Install .bashrc')
+    dots_parser = subparsers.add_parser('dotfiles', help='Install dotfiles')
+    all_parser = subparsers.add_parser('all', help='Apply everything')
+    diff_parser = subparsers.add_parser('diff', help='Equivalent to "dots --dry-run all"')
+
+    return parser.parse_args()
+
+
+def main(args):
+    if args.command == 'diff':
+        args.dry_run = True
+
+    context = dd_context.Context(
+        config_path=args.config_file,
+        dot_root=os.path.realpath(args.root),
+        dry_run=args.dry_run,
+    )
+
+    if args.command in {'bashrc', 'all'}:
+        with context.logger.indent(offset=0, label='bashrc'):
+            dd_bashrc.process(context, context.cfg['bashrc'])
+    if args.command in {'dotfiles', 'all'}:
+        with context.logger.indent(offset=0, label='dots'):
+            dd_dots.process(context, context.cfg.get('dots', []))
+    if args.command == 'diff':
+        with context.logger.indent(offset=0, label='bashrc'):
+            dd_bashrc.process(context, context.cfg['bashrc'])
+        with context.logger.indent(offset=0, label='dots'):
+            dd_dots.process(context, context.cfg.get('dots', []))
+
+
+if __name__ == '__main__':
+    main(parse_args())
