@@ -10,6 +10,7 @@ alias etail='tail -fn+1'
 alias tmux='TERM=xterm-256color tmux'
 alias please='sudo'
 alias vim_clsw="find . -type f -name '*.sw*' -delete"
+command -v nvim &>/dev/null && alias vim='nvim'
 
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
