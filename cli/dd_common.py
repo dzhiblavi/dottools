@@ -24,10 +24,10 @@ def try_remove(context, file):
         context.logger.action('trying to remove %s', file)
 
         if not context.dry_run:
-            if os.path.isfile(dst) or os.path.islink(dst):
-                os.remove(dst)
-            elif os.path.isdir(dst):
-                shutil.rmtree(dst)
+            if os.path.isfile(file) or os.path.islink(file):
+                os.remove(file)
+            elif os.path.isdir(file):
+                shutil.rmtree(file)
     except Exception as e:
         context.logger.warning('failed to remove %s because of %s', file, str(e))
 
