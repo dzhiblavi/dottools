@@ -14,7 +14,7 @@ def _create_parent_dir_if_not_exists(context, file_path):
     if os.path.isdir(dir_name):
         return
 
-    context.logger.info('creating parent directory for %s')
+    context.logger.info('creating parent directory for %s', file_path)
     if not context.dry_run:
         os.makedirs(dir_name, exist_ok=True)
 
@@ -28,6 +28,8 @@ def try_remove(context, file):
                 os.remove(file)
             elif os.path.isdir(file):
                 shutil.rmtree(file)
+            elif os.path.islink(file):
+                os.unlink(file)
     except Exception as e:
         context.logger.warning('failed to remove %s because of %s', file, str(e))
 
@@ -64,7 +66,7 @@ def check_same_file(context, src, dst):
 
 
 def create_direct_symlink(context, src, dst):
-    if os.path.exists(dst):
+    if os.path.exists(dst) or os.path.islink(dst):
         context.logger.info('%s already exists', dst)
         try_remove(context, dst)
 

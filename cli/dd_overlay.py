@@ -23,6 +23,10 @@ def _recursive_files_or(
     if os.path.isfile(src):
         return function(src, dst)
 
+    if not os.path.exists(src):
+        context.logger.warning('Path %s does not exist, skipping', src)
+        return False
+
     result = False
     for path in os.scandir(src):
         if path.is_file():
