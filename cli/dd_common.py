@@ -41,7 +41,7 @@ def read_lines_or_empty(context, file):
         context.logger.warning('file %s does not exist', file)
         return []
 
-    with open(file, 'r') as f:
+    with open(file, 'r', encoding='utf-8') as f:
         return list(f.readlines())
 
 
