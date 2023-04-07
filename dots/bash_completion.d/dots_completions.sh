@@ -7,19 +7,17 @@ _dd_load 'common/scp_completer'
 # Puts available dots configuration names into the specified variable as array
 # arg0 : variable array to store config names
 #
-function _dd_dots_get_types() {
+function _dd_dots_get_configs() {
     local out_var="$1"
-    local dotfiles_root="${DOTFILES_ROOT:-'~/dotfiles'}"
+    local configs_root="$(dirname ${DOTTOOLS_CFG_PATH:-'~/dotfiles/config/'})"
 
-    if ! [ -d "${dotfiles_root}" ]; then
+    if ! [ -d "${configs_root}" ]; then
         eval "${out_var}=''"
         return 0
     fi
 
-    for path in "${dotfiles_root}"/configs/*; do
-        file="$(basename "${path}")"
-        type="${file::-5}"
-        eval "${out_var}+=(\"${type}\")"
+    for path in "${configs_root}"/*; do
+        eval "${out_var}+=(\"${path}\")"
     done
 }
 
@@ -35,21 +33,18 @@ function _dd_dots_complete() {
     _get_comp_words_by_ref -n : cur prev words cword
 
     case "${prev}" in
-        '-t'|'--type') _dd_dots_get_types reply ;;
-        '--dotfiles-root'|'-r') reply+=("${DOTFILES_ROOT:-'~/dotfiles'}") ;;
-        'sync') reply+=("--help" "-d" "--destination") ;;
-        '-d'|'--destination') _dd_complete_scp ;;
+        '-c'|'--config-file') _dd_dots_get_configs reply ;;
+        '-r'|'--root') reply+=("${DOTFILES_ROOT:-'~/dottools'}") ;;
         *) {
             reply+=(                   \
                 "--help"               \
                 "bashrc"               \
                 "dotfiles"             \
-                "sync"                 \
                 "diff"                 \
                 "all"                  \
                 "--dry-run"            \
-                "-t" "--type"          \
-                "-r" "--dotfiles-root" \
+                "-c" "--config-file"   \
+                "-r" "--root"          \
             )
         } ;;
     esac
