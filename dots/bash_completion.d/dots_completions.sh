@@ -35,6 +35,7 @@ function _dd_dots_complete() {
     case "${prev}" in
         '-c'|'--config-file') _dd_dots_get_configs reply ;;
         '-r'|'--root') reply+=("${DOTFILES_ROOT:-'~/dottools'}") ;;
+        '-l'|'--log-level') reply+=('0' '1' '2' '3') ;;
         *) {
             reply+=(                   \
                 "--help"               \

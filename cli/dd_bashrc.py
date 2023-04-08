@@ -110,13 +110,12 @@ def process(context, bashrc_config):
     generated_path = context.dot_generated + '/bashrc'
     method = bashrc_config.get('method', 'copy')
 
-    with context.logger.indent('generate'):
-        with context.disable_dry_run():
-            dd_common.write_lines(
-                context=context,
-                lines=create_bashrc(context, bashrc_config),
-                path=generated_path,
-            )
+    with context.logger.silence(), context.disable_dry_run():
+        dd_common.write_lines(
+            context=context,
+            lines=create_bashrc(context, bashrc_config),
+            path=generated_path,
+        )
 
     with context.logger.indent('diff'):
         any_difference = dd_overlay.has_any_difference(
@@ -126,13 +125,24 @@ def process(context, bashrc_config):
         )
 
         if not dd_overlay.created_by_method(context, generated_path, bashrc_location, method):
-            context.logger.info('existsing path %s was not created via %s', bashrc_location, method)
+            context.logger.info(
+                [
+                    'existsing bashrc was not created via the specified method',
+                    'path\t= %s',
+                    'meth\t= %s',
+                ],
+                bashrc_location, method,
+            )
             any_difference = True
 
     with context.logger.indent('action'):
         if not any_difference:
             context.logger.info(
-                'The bashrc located in %s is up to date, no actions performed', bashrc_location,
+                [
+                    'The bashrc is up to date, no actions performed',
+                    'loc\t= %s',
+                ],
+                bashrc_location,
             )
         else:
             dd_overlay.backup(

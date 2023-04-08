@@ -33,16 +33,26 @@ def process_dot(context, dot_config):
             src_ignore_regex,
         ):
             context.logger.info(
-                'Existsing path %s was not created by "%s" method',
-                dot_dst_path, method,
+                [
+                    'Existsing dot was not created by the specified method',
+                    'alias\t= %s',
+                    'dst\t= %s',
+                    'meth\t= %s',
+                ],
+                alias, dot_dst_path, method,
             )
             any_difference = True
 
     with context.logger.indent('action'):
         if not any_difference:
             context.logger.info(
-                'The dot "%s" in %s is up to date, no actions performed',
-                alias, dot_dst_path,
+                [
+                    'The dot in is up to date, no actions performed',
+                    'alias\t= %s',
+                    'dst\t= %s',
+                    'meth\t= %s',
+                ],
+                alias, dot_dst_path, method
             )
         else:
             dd_overlay.backup(
