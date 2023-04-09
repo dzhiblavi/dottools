@@ -1,6 +1,5 @@
 import difflib
-
-import dd_colors
+import util.dd_colors as dd_colors
 
 
 def get_diff_line(string_a, string_b):

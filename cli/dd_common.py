@@ -1,11 +1,6 @@
 import os
-import sys
-import logging
 import shutil
-
-import dd_diff
-import dd_colors
-import dd_context
+import util.dd_diff as dd_diff
 
 
 def _create_parent_dir_if_not_exists(context, file_path):
@@ -28,33 +23,21 @@ def _create_parent_dir_if_not_exists(context, file_path):
 
 
 def try_remove(context, file):
-    try:
-        context.logger.action(
-            [
-                'trying to remove path',
-                'path\t= %s',
-            ],
-            file,
-        )
+    context.logger.action(
+        [
+            'trying to remove path',
+            'path\t= %s',
+        ],
+        file,
+    )
 
-        if not context.dry_run:
-            if os.path.isfile(file) or os.path.islink(file):
-                os.remove(file)
-            elif os.path.isdir(file):
-                shutil.rmtree(file)
-            elif os.path.islink(file):
-                os.unlink(file)
-
-    except Exception as e:
-        context.logger.warning(
-            [
-                'failed to remove path',
-                'path\t= %s',
-                'what\t= %s',
-            ],
-            file,
-            str(e),
-        )
+    if not context.dry_run:
+        if os.path.isfile(file) or os.path.islink(file):
+            os.remove(file)
+        elif os.path.isdir(file):
+            shutil.rmtree(file)
+        elif os.path.islink(file):
+            os.unlink(file)
 
 
 def read_lines_or_empty(context, file):
@@ -90,63 +73,7 @@ def write_lines(context, lines, path):
             f.writelines(lines)
 
 
-def check_same_file(context, src, dst):
-    src_expand = os.path.realpath(src)
-    dst_expand = os.path.realpath(dst)
-
-    if src_expand == dst_expand:
-        context.logger.info(
-            [
-                'paths point to same location',
-                'src\t= %s',
-                'dst\t= %s',
-            ],
-            src, dst,
-        )
-        return True
-    else:
-        return False
-
-
-def create_direct_symlink(context, src, dst):
-    if os.path.exists(dst) or os.path.islink(dst):
-        context.logger.info(
-            [
-                'path already exists',
-                'path\t= %s',
-            ],
-            dst,
-        )
-        try_remove(context, dst)
-
-    _create_parent_dir_if_not_exists(context, dst)
-
-    context.logger.action(
-        [
-            'creating symlink',
-            'src\t= %s',
-            'dst\t= %s',
-        ],
-        dst, src,
-    )
-    if not context.dry_run:
-        os.symlink(src, dst)
-
-    return True
-
-
 def copy_file(context, src, dst):
-    if check_same_file(context, src, dst):
-        context.logger.info(
-            [
-                'cannot copy file since destination exists',
-                'src\t= %s',
-                'dst\t= %s',
-            ],
-            src, dst,
-        )
-        try_remove(context, dst)
-
     _create_parent_dir_if_not_exists(context, dst)
 
     context.logger.action(
@@ -164,49 +91,72 @@ def copy_file(context, src, dst):
     return True
 
 
-def files_difference(context, src, dst):
-    if check_same_file(context, src, dst):
-        context.logger.info(
-            [
-                'path is already up to date',
-                'path=\t= %s',
-            ],
-            dst,
-        )
-        return False
-
-    src_lines = read_lines_or_empty(context, src)
-    dst_lines = read_lines_or_empty(context, dst)
-
-    diff = dd_diff.get_diff_lines(dst_lines, src_lines)
+def print_difference(context, lines_a, lines_b):
+    diff = dd_diff.get_diff_lines(lines_a, lines_b)
     if diff:
-        context.logger.info(
-            [
-                'difference between path',
-                'src\t= %s',
-                'dst\t= %s',
-            ],
-            src, dst,
-        )
         context.logger.write_plain(diff)
         return True
     else:
+        context.logger.info('No difference')
+        return False
+
+
+def files_difference(context, src, dst):
+    src_lines = read_lines_or_empty(context, src)
+    dst_lines = read_lines_or_empty(context, dst)
+
+    context.logger.info(
+        [
+            'difference between paths',
+            'src\t= %s',
+            'dst\t= %s',
+        ],
+        src, dst,
+    )
+
+    return print_difference(context, src_lines, dst_lines)
+
+
+def recurse_directories(
+    context,
+    src, dst,
+    function,
+    ignore_regex=None,
+):
+    src = os.path.abspath(src)
+    dst = os.path.abspath(dst)
+
+    if ignore_regex is None:
+        ignore_regex = []
+
+    if any(map(lambda pattern: pattern.search(src), ignore_regex)):
         context.logger.info(
             [
-                'no difference between files',
-                'src\t= %s',
-                'dst\t= %s',
+                'Ignoring path',
+                'path\t= %s',
             ],
-            src, dst,
+            src
         )
-        return False
+        return
 
+    if os.path.isfile(src):
+        function(src, dst)
+        return
 
-def is_a_symlink(context, to, path):
-    if not os.path.islink(path):
-        context.logger.info('%s is not a symlink', path)
-        return False
-    if os.path.realpath(to) != os.path.realpath(path):
-        context.logger.info('%s does not point to %s', path, to)
-        return False
-    return True
+    for path in os.scandir(src):
+        if path.is_file():
+            recurse_directories(
+                context=context,
+                src=path.path,
+                dst=os.path.join(dst, path.name),
+                function=function,
+                ignore_regex=ignore_regex,
+            ) 
+        else:
+            recurse_directories(
+                context=context,
+                src=os.path.join(src, path.name),
+                dst=os.path.join(dst, path.name),
+                function=function,
+                ignore_regex=ignore_regex,
+            )

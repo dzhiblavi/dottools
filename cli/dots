@@ -9,12 +9,10 @@ import shutil
 import socket
 import collections
 
-import dd_diff
-import dd_colors
 import dd_context
 import dd_bashrc
 import dd_dots
-import dd_env
+import util.dd_env
 
 
 def parse_args():
@@ -23,13 +21,13 @@ def parse_args():
     parser.add_argument(
         '--config-file', '-c',
         help='Configuration description (.yaml)',
-        default=os.getenv(dd_env.CONFIG_FILE_PATH_ENV_VAR),
+        default=os.getenv(util.dd_env.CONFIG_FILE_PATH_ENV_VAR),
     )
     parser.add_argument(
         '--root', '-r',
         help='dottols root directory',
         default=os.getenv(
-            dd_env.ROOT_PATH_ENV_VAR,
+            util.dd_env.ROOT_PATH_ENV_VAR,
             default=os.path.expanduser('~/dottools'),
         ),
     )

@@ -1,40 +1,34 @@
 import os
-import sys
 import yaml
-import shutil
-import logging
-
-import dd_diff
-import dd_context
-import dd_overlay
-import dd_common
-import dd_env
+import dd_obj
+import util.dd_env as dd_env
 
 
-def create_prompt(context, prompt_style, local=None):
+def _create_prompt(context, prompt_style, local=None):
     prompt = ''
     for part in prompt_style:
         prompt += context.apply(part, local)
     return prompt
 
 
-def get_prompt(context, config):
+def _get_prompt(context, config):
     host_name = config.get('host-name', '<unknown>')
 
-    default_prompt_style = [
-        "'<'",
-        "fmt('NV', fg='light_green') if ctx.has_gpu else fmt('NONV', fg='light_red')",
-        "'> '",
-        "'<'",
-        "fmt('h', fg='light_green')",
-        "'${TMUX:+:\033[0;33mtx/${TMUX_PANE#%}\033[0m}'",
-        "':'",
-        f"fmt('{host_name}', fg='light_cyan')",
-        "'>'",
-    ]
-    default_prompt = create_prompt(context, default_prompt_style)
+    with context.logger.silence():
+        default_prompt_style = [
+            "'<'",
+            "fmt('NV', fg='light_green') if ctx.has_gpu else fmt('NONV', fg='light_red')",
+            "'> '",
+            "'<'",
+            "fmt('h', fg='light_green')",
+            "'${TMUX:+:\033[0;33mtx/${TMUX_PANE#%}\033[0m}'",
+            "':'",
+            f"fmt('{host_name}', fg='light_cyan')",
+            "'>'",
+        ]
+        default_prompt = _create_prompt(context, default_prompt_style)
 
-    return create_prompt(
+    return _create_prompt(
         context=context,
         prompt_style=config.get('prompt_style', default_prompt_style),
         local={
@@ -44,12 +38,11 @@ def get_prompt(context, config):
     )
 
 
-def create_bashrc(context, bashrc_config):
+def _create_bashrc(context, bashrc_config):
     def write_info_config(out):
         out.append(": <<END_COMMENT\n")
         out.append("This .bashrc is generated from the following configuration:\n")
         js = yaml.dump(bashrc_config, indent=2).splitlines(True)
-        js[-1] += '\n'
         out.extend(js)
         out.append("END_COMMENT\n")
 
@@ -88,7 +81,7 @@ def create_bashrc(context, bashrc_config):
         if bashrc_config.get('disable_prompt_env', False):
             return
         env = {
-            dd_env.PROMPT_ENV_VAR: f"'{get_prompt(context, bashrc_config)}'",
+            dd_env.PROMPT_ENV_VAR: f"'{_get_prompt(context, bashrc_config)}'",
         }
         for k, v in env.items():
             out.append('export {k}={v}\n'.format(k=k, v=v))
@@ -105,54 +98,27 @@ def create_bashrc(context, bashrc_config):
     return out
 
 
+class Bashrc(dd_obj.FileObject):
+    def __init__(self, context, bashrc_config):
+        dd_obj.FileObject.__init__(
+            self, context,
+            dst=os.path.expanduser(bashrc_config.get('dst', '~/.bashrc')),
+        )
+
+        if not bashrc_config:
+            raise AssertionError('None bashrc config has been provided')
+
+        self._config = bashrc_config
+
+    def _generate(self):
+        return _create_bashrc(self._context, self._config)
+
+
 def process(context, bashrc_config):
-    bashrc_location = os.path.expanduser(bashrc_config.get('dst', '~/.bashrc'))
-    generated_path = context.dot_generated + '/bashrc'
-    method = bashrc_config.get('method', 'copy')
+    bashrc = Bashrc(context, bashrc_config)
 
-    with context.logger.silence(), context.disable_dry_run():
-        dd_common.write_lines(
-            context=context,
-            lines=create_bashrc(context, bashrc_config),
-            path=generated_path,
-        )
-
-    with context.logger.indent('diff'):
-        any_difference = dd_overlay.has_any_difference(
-            context=context,
-            src=generated_path,
-            dst=bashrc_location,
-        )
-
-        if not dd_overlay.created_by_method(context, generated_path, bashrc_location, method):
-            context.logger.info(
-                [
-                    'existsing bashrc was not created via the specified method',
-                    'path\t= %s',
-                    'meth\t= %s',
-                ],
-                bashrc_location, method,
-            )
-            any_difference = True
-
-    with context.logger.indent('action'):
-        if not any_difference:
-            context.logger.info(
-                [
-                    'The bashrc is up to date, no actions performed',
-                    'loc\t= %s',
-                ],
-                bashrc_location,
-            )
-        else:
-            dd_overlay.backup(
-                context=context,
-                src=generated_path,
-                dst=bashrc_location,
-            )
-            dd_overlay.overlay(
-                context=context,
-                src=generated_path,
-                dst=bashrc_location,
-                method=method,
-            )
+    if not bashrc.diff():
+        context.logger.info('No difference in .bashrc')
+    else:
+        bashrc.backup()
+        bashrc.apply()
