@@ -109,9 +109,10 @@ class CopyDirObject(Object):
                 self._paths_to_remove.append(dst_path)
 
         with self._context.logger.indent('diff(-)'):
-            dd_common.recurse_directories(
-                self._context, self._dst, self._src, rm_fn, self._ignore_regex,
-            )
+            if os.path.exists(self._dst):
+                dd_common.recurse_directories(
+                    self._context, self._dst, self._src, rm_fn, self._ignore_regex,
+                )
 
         return bool(self._diff_abspaths) or bool(self._paths_to_remove)
 
