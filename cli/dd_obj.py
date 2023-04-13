@@ -8,13 +8,13 @@ class Object:
         self._context = context
 
     def diff(self):
-        raise NotImplemented('diff is not implemented')
+        raise NotImplementedError('diff is not implemented')
 
     def backup(self):
-        raise NotImplemented('backup is not implemented')
+        raise NotImplementedError('backup is not implemented')
 
     def apply(self):
-        raise NotImplemented('apply is not implemented')
+        raise NotImplementedError('apply is not implemented')
 
 
 class FileObject(Object):
@@ -26,7 +26,7 @@ class FileObject(Object):
         self._generated_lines = None
 
     def _generate(self):
-        raise NotImplemented('generate is not implemented for FileObject')
+        raise NotImplementedError('generate is not implemented for FileObject')
 
     def _generated(self):
         if not self._generated_lines:

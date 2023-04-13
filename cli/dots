@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import argparse
-import subprocess
-import glob
-import shutil
-import socket
-import collections
 
 import dd_context
 import dd_bashrc
@@ -24,11 +18,11 @@ def parse_args():
         default=os.getenv(util.dd_env.CONFIG_FILE_PATH_ENV_VAR),
     )
     parser.add_argument(
-        '--root', '-r',
+        '--root',
         help='dottols root directory',
         default=os.getenv(
             util.dd_env.ROOT_PATH_ENV_VAR,
-            default=os.path.expanduser('~/dottools'),
+            default=os.path.dirname(__file__),
         ),
     )
     parser.add_argument(
