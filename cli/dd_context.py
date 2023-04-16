@@ -29,7 +29,7 @@ class Context:
         self.dry_run = dry_run
         self.cfg = config
         self.cfg_path = config_path
-        self.cfg_dir = os.path.dirname(config_path)
+        self.cfg_dir = os.path.dirname(os.path.dirname(config_path))
         self.home = os.path.expanduser('~')
         self.has_gpu = _has_gpu()
         self.dot_root = dot_root
@@ -52,7 +52,7 @@ class Context:
         ]
 
     def _join(self, head, path):
-        result = os.path.join(head, path) 
+        result = os.path.join(head, path)
         assert os.path.exists(result), f'Path {result} does not exist'
         return os.path.abspath(result)
 
@@ -90,7 +90,15 @@ class Context:
                     **local,
                 },
             )
-        except:
+        except Exception as e:
+            self.logger.warning(
+                [
+                    'Failed to apply context:',
+                    'src\t= %s',
+                    'err\t= %s',
+                ],
+                s, str(e),
+            )
             result = s
 
         self.logger.info(

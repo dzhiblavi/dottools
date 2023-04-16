@@ -22,7 +22,7 @@ def parse_args():
         help='dottols root directory',
         default=os.getenv(
             util.dd_env.ROOT_PATH_ENV_VAR,
-            default=os.path.dirname(__file__),
+            default=os.path.dirname(os.path.dirname(__file__)),
         ),
     )
     parser.add_argument(
