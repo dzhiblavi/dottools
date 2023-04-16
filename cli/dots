@@ -4,13 +4,13 @@ import os
 import argparse
 
 import dd_context
-import dd_bashrc
+import dd_shellrc
 import dd_dots
 import util.dd_env
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='The .bashrc and dottools installer tool')
+    parser = argparse.ArgumentParser(description='The .shellrc and dottools installer tool')
 
     parser.add_argument(
         '--config-file', '-c',
@@ -40,11 +40,10 @@ def parse_args():
     )
 
     subparsers = parser.add_subparsers(title='Commands', dest='command')
-
-    bashrc_parser = subparsers.add_parser('bashrc', help='Install .bashrc')
-    dots_parser = subparsers.add_parser('dotfiles', help='Install dotfiles')
-    all_parser = subparsers.add_parser('all', help='Apply everything')
-    diff_parser = subparsers.add_parser('diff', help='Equivalent to "dots --dry-run all"')
+    subparsers.add_parser('shellrc', help='Install .shellrc')
+    subparsers.add_parser('dotfiles', help='Install dotfiles')
+    subparsers.add_parser('all', help='Apply everything')
+    subparsers.add_parser('diff', help='Equivalent to "dots --dry-run all"')
 
     return parser.parse_args()
 
@@ -60,17 +59,17 @@ def main(args):
         log_level=args.log_level,
     )
 
-    if args.command in {'bashrc', 'all'}:
-        with context.logger.indent(offset=0, label='bashrc'):
-            dd_bashrc.process(context, context.cfg['bashrc'])
+    if args.command in {'shellrc', 'all'}:
+        with context.logger.indent(offset=0, label='shellrc'):
+            dd_shellrc.process(context, context.cfg['shellrc'])
 
     if args.command in {'dotfiles', 'all'}:
         with context.logger.indent(offset=0, label='dots'):
             dd_dots.process(context, context.cfg.get('dots', []))
 
     if args.command in {'diff'}:
-        with context.logger.indent(offset=0, label='bashrc'):
-            dd_bashrc.process(context, context.cfg['bashrc'])
+        with context.logger.indent(offset=0, label='shellrc'):
+            dd_shellrc.process(context, context.cfg['shellrc'])
         with context.logger.indent(offset=0, label='dots'):
             dd_dots.process(context, context.cfg.get('dots', []))
 
