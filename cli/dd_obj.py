@@ -40,6 +40,7 @@ class FileObject(Object):
                 context=self._context,
                 lines_a=self._current_lines,
                 lines_b=self._generated(),
+                obj=self._dst,
             )
 
     def backup(self):

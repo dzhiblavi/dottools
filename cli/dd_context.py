@@ -16,7 +16,7 @@ def _has_gpu():
             shell=True,
         )
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -124,4 +124,3 @@ class Context:
                 self._ctx.dry_run = self._old
 
         return _Disable(self)
-

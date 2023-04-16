@@ -7,6 +7,7 @@ import dd_context
 import dd_shellrc
 import dd_dots
 import util.dd_env
+import util.dd_logger
 
 
 def parse_args():
@@ -27,7 +28,7 @@ def parse_args():
     )
     parser.add_argument(
         '--dry-run',
-        help='Only print which actions will be done instead of doint anything',
+        help='Only print which actions will be done instead of doing anything',
         default=False,
         action='store_true',
     )
@@ -43,14 +44,18 @@ def parse_args():
     subparsers.add_parser('shellrc', help='Install .shellrc')
     subparsers.add_parser('dotfiles', help='Install dotfiles')
     subparsers.add_parser('all', help='Apply everything')
-    subparsers.add_parser('diff', help='Equivalent to "dots --dry-run all"')
+    subparsers.add_parser('diff', help='Equivalent to "dots --dry-run all" with higher log level')
 
     return parser.parse_args()
 
 
 def main(args):
+    if args.dry_run:
+        args.log_level = max(args.log_level, util.dd_logger.LEVEL_ACTION)
+
     if args.command == 'diff':
         args.dry_run = True
+        args.log_level = max(args.log_level, util.dd_logger.LEVEL_DIFF)
 
     context = dd_context.Context(
         config_path=os.path.realpath(args.config_file),

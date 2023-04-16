@@ -91,13 +91,19 @@ def copy_file(context, src, dst):
     return True
 
 
-def print_difference(context, lines_a, lines_b):
+def print_difference(context, lines_a, lines_b, obj):
     diff = dd_diff.get_diff_lines(lines_a, lines_b)
     if diff:
-        context.logger.write_plain(diff)
+        context.logger.log_diff(
+            [
+                'Diff for object',
+                'obj\t= %s',
+                '%s',
+            ],
+            obj, ''.join(diff),
+        )
         return True
     else:
-        context.logger.info('No difference')
         return False
 
 
@@ -105,16 +111,20 @@ def files_difference(context, src, dst):
     src_lines = read_lines_or_empty(context, src)
     dst_lines = read_lines_or_empty(context, dst)
 
-    context.logger.info(
-        [
-            'difference between paths',
-            'src\t= %s',
-            'dst\t= %s',
-        ],
-        src, dst,
-    )
-
-    return print_difference(context, src_lines, dst_lines)
+    diff = dd_diff.get_diff_lines(dst_lines, src_lines)
+    if diff:
+        context.logger.log_diff(
+            [
+                'Diff for files',
+                'src\t= %s',
+                'dst\t= %s',
+                '%s',
+            ],
+            src, dst, ''.join(diff),
+        )
+        return True
+    else:
+        return False
 
 
 def recurse_directories(
@@ -151,7 +161,7 @@ def recurse_directories(
                 dst=os.path.join(dst, path.name),
                 function=function,
                 ignore_regex=ignore_regex,
-            ) 
+            )
         else:
             recurse_directories(
                 context=context,

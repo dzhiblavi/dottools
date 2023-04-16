@@ -3,14 +3,15 @@ import util.dd_colors as dd_colors
 
 from functools import partial
 
+LEVEL_NONE = 0
+LEVEL_ACTION = 1
+LEVEL_DIFF = 2
+LEVEL_ERROR = 3
+LEVEL_WARNING = 4
+LEVEL_INFO = 5
+
 
 class Logger:
-    LEVEL_NONE = 0
-    LEVEL_ACTION = 1
-    LEVEL_ERROR = 2
-    LEVEL_WARNING = 3
-    LEVEL_INFO = 4
-
     class _Silence:
         def __init__(self, logger):
             self._logger = logger
@@ -29,11 +30,11 @@ class Logger:
             self._label = label
 
         def __enter__(self):
-            self._logger._indent += self._num 
+            self._logger._indent += self._num
 
             if self._label is not None:
                 self._logger._labels.append(self._label)
-        
+
         def __exit__(self, exc_type, exc_val, exc_tb):
             self._logger._indent -= self._num
 
@@ -57,7 +58,6 @@ class Logger:
 
         def error(self, fmt, *args):
             self._log('ERROR: ', fmt, *args)
-
 
     def __init__(self, level):
         self._impl = self._StdErrImpl()
@@ -89,27 +89,37 @@ class Logger:
         return [preamble + self._fmt('| ', fmt), *args]
 
     def write_plain(self, text):
-        if self._level < self.LEVEL_INFO:
+        if self._level < LEVEL_INFO:
             return
-        sys.stderr.writelines(text)
 
     def info(self, fmt, *args):
-        if self._level < self.LEVEL_INFO:
+        if self._level < LEVEL_INFO:
             return
         self._impl.info(*self._build_log_args(self._preamble(), fmt, *args))
 
     def warning(self, fmt, *args):
-        if self._level < self.LEVEL_WARNING:
+        if self._level < LEVEL_WARNING:
             return
         self._impl.warning(*self._build_log_args(self._preamble(), fmt, *args))
 
     def error(self, fmt, *args):
-        if self._level < self.LEVEL_ERROR:
+        if self._level < LEVEL_ERROR:
             return
         self._impl.error(*self._build_log_args(self._preamble(), fmt, *args))
 
+    def log_diff(self, fmt, *args):
+        if self._level < LEVEL_DIFF:
+            return
+
+        self._impl.info(
+            *self._build_log_args(
+                f'{self._preamble()}{dd_colors.fmt("DIFF", fg=self._action_fg_clr)} ',
+                fmt, *args,
+            )
+        )
+
     def action(self, fmt, *args):
-        if self._level < self.LEVEL_ACTION:
+        if self._level < LEVEL_ACTION:
             return
 
         self._impl.info(
