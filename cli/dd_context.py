@@ -22,14 +22,48 @@ def _has_gpu():
 
 class Context:
     def __init__(self, config_path, dot_root, dry_run, log_level):
-        with open(config_path, 'r') as f:
-            config = yaml.safe_load(f)
-
         self.logger = util.dd_logger.Logger(log_level)
         self.dry_run = dry_run
-        self.cfg = config
         self.cfg_path = config_path
         self.cfg_dir = os.path.dirname(os.path.dirname(config_path))
+
+        config = self._load(config_path)
+
+        def apply_imports(obj):
+            if isinstance(obj, str):
+                if not obj.startswith('ctx.load'):
+                    return obj
+
+                self.logger.info(
+                    [
+                        'Loading imported object...',
+                        'path\t= %s',
+                    ],
+                    obj
+                )
+
+                return eval(
+                    obj, {},
+                    {
+                        'ctx': self,
+                        'env': os.environ,
+                    },
+                )
+
+            if isinstance(obj, list):
+                return list(map(apply_imports, obj))
+
+            if isinstance(obj, set):
+                return set(map(apply_imports, obj))
+
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    obj[key] = apply_imports(value)
+
+            return obj
+
+        config = apply_imports(config)
+        self.cfg = config
         self.home = os.path.expanduser('~')
         self.has_gpu = _has_gpu()
         self.dot_root = dot_root
@@ -50,6 +84,10 @@ class Context:
             re.compile(self.apply(ignored_spec))
             for ignored_spec in self.cfg.get('ignored-paths', [])
         ]
+
+    def _load(self, path):
+        with open(path, 'r', encoding='utf-8') as file:
+            return yaml.safe_load(file)
 
     def _join(self, head, path):
         result = os.path.join(head, path)
@@ -76,6 +114,9 @@ class Context:
 
     def bin(self, path):
         return self._join(self.dot_bin, path)
+
+    def load(self, path):
+        return self._load(self.rel(path))
 
     def apply(self, s, local=None):
         if not local:

@@ -3,13 +3,11 @@ import dd_obj
 
 
 def process(context, dots_config):
-    for dot_config in dots_config:
-        alias = dot_config.get("alias", "<no-alias>")
-
+    def process_action(dot_config):
         with context.logger.indent(alias):
             if dot_config.get('disabled', False):
                 context.logger.info('Dot is disabled', alias)
-                continue
+                return
 
             src = os.path.expanduser(context.apply(dot_config['src']))
             dst = os.path.expanduser(context.apply(dot_config['dst']))
@@ -27,3 +25,10 @@ def process(context, dots_config):
             else:
                 obj.backup()
                 obj.apply()
+
+    for dot_config in dots_config:
+        alias = dot_config.get("alias", "<no-alias>")
+
+        if 'actions' in dot_config:
+            for action in dot_config['actions']:
+                process_action(action)
