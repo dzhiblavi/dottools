@@ -27,8 +27,6 @@ class Context:
         self.cfg_path = config_path
         self.cfg_dir = os.path.dirname(os.path.dirname(config_path))
 
-        config = self._load(config_path)
-
         def apply_imports(obj):
             if isinstance(obj, str):
                 if not obj.startswith('ctx.load'):
@@ -42,13 +40,22 @@ class Context:
                     obj
                 )
 
-                return eval(
+                result = apply_imports(eval(
                     obj, {},
                     {
                         'ctx': self,
                         'env': os.environ,
                     },
+                ))
+                self.logger.error(
+                    [
+                        'Imported object',
+                        'str\t= %s',
+                        'obj\t= %s',
+                    ],
+                    obj, str(result)
                 )
+                return result
 
             if isinstance(obj, list):
                 return list(map(apply_imports, obj))
@@ -57,13 +64,14 @@ class Context:
                 return set(map(apply_imports, obj))
 
             if isinstance(obj, dict):
-                for key, value in obj.items():
-                    obj[key] = apply_imports(value)
+                return {
+                    key: apply_imports(value)
+                    for key, value in obj.items()
+                }
 
             return obj
 
-        config = apply_imports(config)
-        self.cfg = config
+        self.cfg = apply_imports(self._load(config_path))
         self.home = os.path.expanduser('~')
         self.has_gpu = _has_gpu()
         self.dot_root = dot_root
