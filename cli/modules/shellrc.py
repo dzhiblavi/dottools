@@ -1,7 +1,11 @@
+"""
+
+"""
 import os
 import yaml
-import dd_obj
-import util.dd_env as dd_env
+
+from modules import obj
+from modules.util import env
 
 
 def _create_prompt(context, prompt_style, local=None):
@@ -42,49 +46,48 @@ def _create_shellrc(context, shellrc_config):
     def write_info_config(out):
         out.append(": <<END_COMMENT\n")
         out.append("This .shellrc is generated from the following configuration:\n")
-        js = yaml.dump(shellrc_config, indent=2).splitlines(True)
-        out.extend(js)
+        js_strs = yaml.dump(shellrc_config.to_dict(), indent=2).splitlines(True)
+        out.extend(js_strs)
         out.append("END_COMMENT\n")
 
     def write_scripts(out, kind):
-        for script_spec in shellrc_config.get(kind, []):
-            script_path = context.apply(script_spec)
-            with open(script_path, 'r') as script_f:
+        for script_path in shellrc_config.get(kind, []):
+            with open(script_path, 'r', encoding='utf-8') as script_f:
                 out.extend(script_f.readlines())
 
     def write_base_env(out):
         base_env = {
-            dd_env.CONFIG_FILE_PATH_ENV_VAR: context.cfg_path,
-            dd_env.HOST_NAME_ENV: context.apply(shellrc_config.get('host-name', 'unknown')),
-            dd_env.ROOT_PATH_ENV_VAR: context.dot_root,
-            dd_env.BIN_PATH_ENV: context.dot_bin,
-            dd_env.LIB_PATH_ENV: context.dot_lib,
-            dd_env.DOCKER_PATH_ENV: context.dot_docker,
-            dd_env.DOCKER_BIN_PATH_ENV: context.dot_docker_bin,
+            env.CONFIG_FILE_PATH_ENV_VAR: context.cfg_path,
+            env.HOST_NAME_ENV: shellrc_config.get('host-name', 'unknown'),
+            env.ROOT_PATH_ENV_VAR: context.dot_root,
+            env.BIN_PATH_ENV: context.dot_bin,
+            env.LIB_PATH_ENV: context.dot_lib,
+            env.DOCKER_PATH_ENV: context.dot_docker,
+            env.DOCKER_BIN_PATH_ENV: context.dot_docker_bin,
         }
-        for k, v in base_env.items():
-            out.append('export {k}={v}\n'.format(k=k, v=v))
+        for k, value in base_env.items():
+            out.append(f'export {k}={value}\n')
         out.append('\n')
 
     def write_env(out):
-        for k, v in shellrc_config.get('env', dict()).items():
-            out.append('export {k}={v}\n'.format(k=k, v=v))
+        for k, value in shellrc_config.get('env', {}).items():
+            out.append(f'export {k}={str(value)}\n')
         out.append('\n')
 
     def write_path(out):
         path_env = ''
         for entry in shellrc_config.get('path', []):
-            path_env += ':' + context.apply(entry)
-        out.append('export PATH={path}:${{PATH}}\n'.format(path=path_env))
+            path_env += ':' + entry
+        out.append(f'export PATH={path_env}:${{PATH}}\n')
 
     def write_prompt(out):
         if shellrc_config.get('disable_prompt_env', False):
             return
-        env = {
-            dd_env.PROMPT_ENV_VAR: f"'{_get_prompt(context, shellrc_config)}'",
+        env_dict = {
+            env.PROMPT_ENV_VAR: f"'{_get_prompt(context, shellrc_config)}'",
         }
-        for k, v in env.items():
-            out.append('export {k}={v}\n'.format(k=k, v=v))
+        for k, value in env_dict.items():
+            out.append(f'export {k}={value}\n')
         out.append('\n')
 
     out = []
@@ -98,9 +101,9 @@ def _create_shellrc(context, shellrc_config):
     return out
 
 
-class Shellrc(dd_obj.FileObject):
+class Shellrc(obj.FileObject):
     def __init__(self, context, shellrc_config):
-        dd_obj.FileObject.__init__(
+        obj.FileObject.__init__(
             self, context,
             dst=os.path.expanduser(shellrc_config.get('dst', '~/.shellrc')),
         )

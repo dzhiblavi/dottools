@@ -1,7 +1,12 @@
+"""
+TODO
+"""
+
 import sys
-import util.dd_colors as dd_colors
 
 from functools import partial
+from modules.util import colors
+
 
 LEVEL_NONE = 0
 LEVEL_ACTION = 1
@@ -15,6 +20,7 @@ class Logger:
     class _Silence:
         def __init__(self, logger):
             self._logger = logger
+            self._old_level = None
 
         def __enter__(self):
             self._old_level = self._logger._level
@@ -59,12 +65,13 @@ class Logger:
         def error(self, fmt, *args):
             self._log('ERROR: ', fmt, *args)
 
-    def __init__(self, level):
+    def __init__(self, level, diff):
         self._impl = self._StdErrImpl()
         self._action_fg_clr = 'green'
         self._indent = 0
         self._labels = []
         self._level = level
+        self._diff = diff
 
     def _preamble(self):
         indent = '-' * self._indent
@@ -77,16 +84,16 @@ class Logger:
     def _fmt(self, preamble, fmt):
         if isinstance(fmt, str):
             return fmt
-        else:
-            return self._newline(preamble).join(
-                map(
-                    partial(self._fmt, preamble),
-                    fmt,
-                )
+
+        return self._newline(preamble).join(
+            map(
+                partial(self._fmt, preamble),
+                fmt,
             )
+        )
 
     def _build_log_args(self, preamble, fmt, *args):
-        return [preamble + self._fmt('| ', fmt), *args]
+        return [preamble + self._fmt('| ' + ' ' * self._indent, fmt), *args]
 
     def write_plain(self, text):
         if self._level < LEVEL_INFO:
@@ -108,12 +115,12 @@ class Logger:
         self._impl.error(*self._build_log_args(self._preamble(), fmt, *args))
 
     def log_diff(self, fmt, *args):
-        if self._level < LEVEL_DIFF:
+        if not self._diff:
             return
 
         self._impl.info(
             *self._build_log_args(
-                f'{self._preamble()}{dd_colors.fmt("DIFF", fg=self._action_fg_clr)} ',
+                f'{self._preamble()}{colors.fmt("DIFF", fg=self._action_fg_clr)} ',
                 fmt, *args,
             )
         )
@@ -124,7 +131,7 @@ class Logger:
 
         self._impl.info(
             *self._build_log_args(
-                f'{self._preamble()}{dd_colors.fmt("ACTION", fg=self._action_fg_clr)} ',
+                f'{self._preamble()}{colors.fmt("ACTION", fg=self._action_fg_clr)} ',
                 fmt, *args,
             )
         )

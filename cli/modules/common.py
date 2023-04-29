@@ -1,6 +1,7 @@
 import os
 import shutil
-import util.dd_diff as dd_diff
+
+from modules.util import diff
 
 
 def _create_parent_dir_if_not_exists(context, file_path):
@@ -53,8 +54,8 @@ def read_lines_or_empty(context, file):
         )
         return []
 
-    with open(file, 'r', encoding='utf-8') as f:
-        return list(f.readlines())
+    with open(file, 'r', encoding='utf-8') as file_obj:
+        return list(file_obj.readlines())
 
 
 def write_lines(context, lines, path):
@@ -69,8 +70,8 @@ def write_lines(context, lines, path):
     )
 
     if not context.dry_run:
-        with open(path, 'w') as f:
-            f.writelines(lines)
+        with open(path, 'w', encoding='utf-8') as file:
+            file.writelines(lines)
 
 
 def copy_file(context, src, dst):
@@ -92,27 +93,28 @@ def copy_file(context, src, dst):
 
 
 def print_difference(context, lines_a, lines_b, obj):
-    diff = dd_diff.get_diff_lines(lines_a, lines_b)
-    if diff:
+    difference = diff.get_diff_lines(lines_a, lines_b)
+    if difference:
         context.logger.log_diff(
             [
                 'Diff for object',
                 'obj\t= %s',
                 '%s',
             ],
-            obj, ''.join(diff),
+            obj, ''.join(difference),
         )
         return True
-    else:
-        return False
+
+    return False
 
 
 def files_difference(context, src, dst):
     src_lines = read_lines_or_empty(context, src)
     dst_lines = read_lines_or_empty(context, dst)
 
-    diff = dd_diff.get_diff_lines(dst_lines, src_lines)
-    if diff:
+    difference = diff.get_diff_lines(dst_lines, src_lines)
+
+    if difference:
         context.logger.log_diff(
             [
                 'Diff for files',
@@ -120,24 +122,21 @@ def files_difference(context, src, dst):
                 'dst\t= %s',
                 '%s',
             ],
-            src, dst, ''.join(diff),
+            src, dst, ''.join(difference),
         )
         return True
-    else:
-        return False
+
+    return False
 
 
 def recurse_directories(
     context,
     src, dst,
     function,
-    ignore_regex=None,
+    ignore_regex,
 ):
     src = os.path.abspath(src)
     dst = os.path.abspath(dst)
-
-    if ignore_regex is None:
-        ignore_regex = []
 
     if any(map(lambda pattern: pattern.search(src), ignore_regex)):
         context.logger.info(

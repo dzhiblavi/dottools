@@ -1,5 +1,9 @@
+"""
+TODO
+"""
+
 import difflib
-import util.dd_colors as dd_colors
+from modules.util import colors
 
 
 def get_diff_line(string_a, string_b):
@@ -9,12 +13,12 @@ def get_diff_line(string_a, string_b):
         if opcode == "equal":
             output += [string_a[a0:a1]]
         elif opcode == "insert":
-            output += [dd_colors.fmt(string_b[b0:b1], bg='green')]
+            output += [colors.fmt(string_b[b0:b1], bg='green')]
         elif opcode == "delete":
-            output += [dd_colors.fmt(string_a[a0:a1], bg='red')]
+            output += [colors.fmt(string_a[a0:a1], bg='red')]
         elif opcode == "replace":
-            output += [dd_colors.fmt(string_b[b0:b1], bg='green')]
-            output += [dd_colors.fmt(string_a[a0:a1], bg='red')]
+            output += [colors.fmt(string_b[b0:b1], bg='green')]
+            output += [colors.fmt(string_a[a0:a1], bg='red')]
     output = "".join(output)
     return output
 
@@ -53,20 +57,22 @@ def iget_diff_lines(
                 continue
             if tag == 'delete':
                 for line in a[i1:i2]:
-                    yield dd_colors.fmt_line('-' + line, bg='red')
+                    yield colors.fmt_line('-' + line, bg='red')
             if tag == 'insert':
                 for line in b[j1:j2]:
-                    yield dd_colors.fmt_line('+' + line, bg='green')
+                    yield colors.fmt_line('+' + line, bg='green')
             if tag == 'replace':
                 for i in range(min(len(a[i1:i2]), len(b[j1:j2]))):
-                    yield dd_colors.fmt_line('~', bg='light_cyan') + \
+                    yield colors.fmt_line('~', bg='light_cyan') + \
                           get_diff_line(a[i1:i2][i], b[j1:j2][i])
-                for i in range(min(len(a[i1:i2]), len(b[j1:j2])), max(len(a[i1:i2]), len(b[j1:j2]))):
+                for i in range(
+                    min(len(a[i1:i2]), len(b[j1:j2])),
+                    max(len(a[i1:i2]), len(b[j1:j2]))
+                ):
                     if i < len(a[i1:i2]):
-                        yield dd_colors.fmt_line('+' + a[i1:i2][i], bg='green')
+                        yield colors.fmt_line('+' + a[i1:i2][i], bg='green')
                     elif i < len(b[j1:j2]):
-                        yield dd_colors.fmt_line('+' + b[j1:j2][i], bg='green')
-
+                        yield colors.fmt_line('+' + b[j1:j2][i], bg='green')
 
 
 def get_diff_lines(a, b, fromfile='', tofile='', fromfiledate=None, tofiledate=None, lineterm='\n'):
@@ -76,4 +82,3 @@ def get_diff_lines(a, b, fromfile='', tofile='', fromfiledate=None, tofiledate=N
             iget_diff_lines(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
         )
     )
-

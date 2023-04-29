@@ -1,30 +1,37 @@
+"""
+TODO
+"""
+
 import os
-import dd_obj
+from modules import obj
 
 
 def process(context, dots_config):
+    """
+    TODO
+    """
+
     def process_action(dot_config):
         with context.logger.indent(alias):
             if dot_config.get('disabled', False):
                 context.logger.info('Dot is disabled', alias)
                 return
 
-            src = os.path.expanduser(context.apply(dot_config['src']))
-            dst = os.path.expanduser(context.apply(dot_config['dst']))
+            src = os.path.expanduser(dot_config['src'])
+            dst = os.path.expanduser(dot_config['dst'])
 
             if os.path.isdir(src):
-                ignore_regex = context.get_ignored_paths(dot_config.get('ignored-paths'))
-                obj = dd_obj.CopyDirObject(context, src, dst, ignore_regex)
+                objt = obj.CopyDirObject(context, src, dst, dot_config.ignored_paths())
             elif os.path.isfile(src):
-                obj = dd_obj.CopyFileObject(context, src, dst)
+                objt = obj.CopyFileObject(context, src, dst)
             else:
                 raise AssertionError(f'unknown entity (source): {src}')
 
-            if not obj.diff():
+            if not objt.diff():
                 context.logger.info('dotfile is up to date')
             else:
-                obj.backup()
-                obj.apply()
+                objt.backup()
+                objt.apply()
 
     for dot_config in dots_config:
         alias = dot_config.get("alias", "<no-alias>")

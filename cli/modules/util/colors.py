@@ -1,3 +1,7 @@
+"""
+TODO
+"""
+
 _color_map = {
     'black': 30,
     'red': 31,
@@ -62,4 +66,3 @@ def fmt(text, fg=None, bg=None, font=None):
         bg=_color_bg(bg),
         font=_get_font(font),
     )
-

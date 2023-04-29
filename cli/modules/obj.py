@@ -1,9 +1,14 @@
 import os
-import dd_common
+
 from functools import partial
+from modules import common
 
 
 class Object:
+    """
+    TODO
+    """
+
     def __init__(self, context):
         self._context = context
 
@@ -18,11 +23,15 @@ class Object:
 
 
 class FileObject(Object):
+    """
+    TODO
+    """
+
     def __init__(self, context, dst):
         Object.__init__(self, context)
 
         self._dst = dst
-        self._current_lines = dd_common.read_lines_or_empty(self._context, self._dst)
+        self._current_lines = common.read_lines_or_empty(self._context, self._dst)
         self._generated_lines = None
 
     def _generate(self):
@@ -36,7 +45,7 @@ class FileObject(Object):
 
     def diff(self):
         with self._context.logger.indent('diff'):
-            return dd_common.print_difference(
+            return common.print_difference(
                 context=self._context,
                 lines_a=self._current_lines,
                 lines_b=self._generated(),
@@ -48,7 +57,7 @@ class FileObject(Object):
             backup_path = self._dst + '.backup'
 
             if os.path.isfile(self._dst):
-                dd_common.copy_file(self._context, self._dst, backup_path)
+                common.copy_file(self._context, self._dst, backup_path)
             else:
                 self._context.logger.warning(
                     [
@@ -60,7 +69,7 @@ class FileObject(Object):
 
     def apply(self):
         with self._context.logger.indent('action'):
-            return dd_common.write_lines(self._context, self._generated(), self._dst)
+            return common.write_lines(self._context, self._generated(), self._dst)
 
 
 class CopyFileObject(FileObject):
@@ -69,7 +78,7 @@ class CopyFileObject(FileObject):
         self._src = src
 
     def _generate(self):
-        return dd_common.read_lines_or_empty(self._context, self._src)
+        return common.read_lines_or_empty(self._context, self._src)
 
 
 class CopyDirObject(Object):
@@ -84,7 +93,7 @@ class CopyDirObject(Object):
         self._paths_to_remove = []
 
         def diff_fn(dst_list, src_path, dst_path):
-            if dd_common.files_difference(
+            if common.files_difference(
                 context=self._context,
                 src=src_path,
                 dst=dst_path,
@@ -92,7 +101,7 @@ class CopyDirObject(Object):
                 dst_list.append((src_path, dst_path))
 
         with self._context.logger.indent('diff(+/~)'):
-            dd_common.recurse_directories(
+            common.recurse_directories(
                 self._context, self._src, self._dst,
                 partial(diff_fn, self._diff_abspaths),
                 self._ignore_regex,
@@ -111,7 +120,7 @@ class CopyDirObject(Object):
 
         with self._context.logger.indent('diff(-)'):
             if os.path.exists(self._dst):
-                dd_common.recurse_directories(
+                common.recurse_directories(
                     self._context, self._dst, self._src, rm_fn, self._ignore_regex,
                 )
 
@@ -127,13 +136,12 @@ class CopyDirObject(Object):
                     continue
 
                 backup_dst = os.path.join(backup_dir, os.path.relpath(dst, self._dst))
-                dd_common.copy_file(self._context, dst, backup_dst)
+                common.copy_file(self._context, dst, backup_dst)
 
     def apply(self):
         with self._context.logger.indent('apply'):
             for src, dst in self._diff_abspaths:
-                dd_common.copy_file(self._context, src, dst)
+                common.copy_file(self._context, src, dst)
 
             for dst in self._paths_to_remove:
-                dd_common.try_remove(self._context, dst)
-
+                common.try_remove(self._context, dst)
