@@ -176,8 +176,8 @@ class _Config:
             return obj
 
         if clazz == list and isinstance(obj, dict):
-            assert 'list' in obj, \
-                   f'list field not found in {obj} when astype(list) called'
+            if 'list' not in obj:
+                return []
 
             return obj['list'].astype(list)
 
