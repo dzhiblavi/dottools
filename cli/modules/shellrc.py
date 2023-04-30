@@ -20,7 +20,7 @@ def _create_prompt(context, prompt_style, local=None):
 def _get_prompt(context, config):
     return _create_prompt(
         context=context,
-        prompt_style=config.get('prompt_style').astype(list),
+        prompt_style=config.get('prompt-style').astype(list),
     )
 
 

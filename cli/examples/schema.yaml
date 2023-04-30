@@ -1,0 +1,145 @@
+# please note that this is not a valid config since it contains non-existing paths
+# for more small and detailed examples of each feature please see cli/tests/manual directory
+
+# each element in the list is replaced with the object x[i] loaded via path
+# then, objects are reduced via merge algorithm into one object X = reduce(merge, x)
+# then, from field is removed form the *current* object Y the result is merge(base=X, extend=Y)
+#
+# NOTE: merge-opts control how objects are merged, see below;
+# NOTE: any object or subobject in the configuration can have field 'from' (see shellrc.pre);
+from:
+  - ctx.load('relative/to/current/files/dir/1.yaml')
+  - ctx.load('relative/to/current/files/dir/2.yaml')
+  - ctx.load('relative/to/current/files/dir/3.yaml')
+
+# the following merge options dict is the default one; see each field for available options;
+#
+# NOTE: children's merge-opts are being merged with parent's merge-opts using default merge options;
+# NOTE: any object or subobject in the configuration can have field 'merge-opts' and it will be
+#       respected by the merge algorithm; receiver's (one who uses 'from') 'merge-opts' have
+#       *higher* priority; for lists, one can use lists' object representation
+#       (see shellrc.pre or shellrc.post): [a, b, c] -> {'list': [a, b, c], 'merge-opts': {...}}
+merge-opts:
+  # {illegal, preserve, overwrite}
+  value: overwrite
+
+  # {illegal, append, prepend, preserve, overwrite}
+  list: append
+
+  # {illegal, union_recursive, union_add_only, preserve, overwrite}
+  dict: union_recursive
+
+# if full path *contains* at least one match of these regular expression, it is ignored
+#
+# NOTE: any object or subobject in the configuration can have field 'ignored-paths';
+# NOTE: children inherit ignored-paths and can only extend it (append new ignored paths)
+ignored-paths:
+  - .git/
+  - __pycache__
+  - ".*.sw*"
+
+# shellrc (.bashrc, .zshrc, ...) configuration
+shellrc:
+  # destination of shellrc
+  dst: ~/.bashrc
+
+  # copy is the only one available now (and the default one)
+  method: copy
+
+  # the name of the host this config is for
+  host-name: my-cool-pc-name
+
+  # whether prompt env variable should not be set
+  disable_prompt_env: false
+
+  # prompt style: a list of parts that are simply concatenated
+  # this example will be rendered as "<my-cool-pc-name>"
+  prompt-style:
+    - '<'
+    - ctx.raw_cfg.get('host-name')
+    - '>'
+
+  # environment variables
+  #
+  # NOTE: I added merge-opts here because it is scary to override env variables' values
+  env:
+    merge-opts:
+      value: illegal
+
+    CC: lang
+    CXX: clang++
+    EDITOR: vim
+
+  # components of PATH environment variable
+  path:
+    - ctx.dot_cli
+    - ctx.dot_bin
+    - ctx.home + '/.local/bin'
+    - /usr/local/opt/llvm/bin
+    - ctx.rel('bin')
+
+  # scripts that are simply written into $dst *before* anything else; order is preserved
+  #
+  # NOTE: the representation of a *list* here: it is defined as object with 'list' in it so that
+  #       we are able to add merge-opts, (also from and ignored-paths) because we do not want to
+  #       merge such lists
+  pre:
+    # note that from can be used here
+    from: []
+
+    # note that merge-opts can be used here
+    merge-opts:
+      list: illegal
+
+    list:
+      - ctx.rel('...')
+      - ctx.common('...')
+
+  # scripts that are simply written into $dst in arbitrary place in it; order is preserved
+  mid:
+    - ctx.rel('...')
+    - ctx.common('...')
+
+  # scripts that are simply written into $dst *after* anything else; order is preserved
+  #
+  # NOTE: the representation of a *list* here: it is defined as object with 'list' in it so that
+  #       we are able to add merge-opts, (also from and ignored-paths) because we do not want to
+  #       merge such lists
+  post:
+    merge-opts:
+      list: illegal
+
+    list:
+      - ctx.rel('...')
+      - ctx.common('...')
+
+# dotfiles (files or directories that must be copied somewhere)
+dots:
+  # this should be a list that can have arbitrary number of items
+
+  # the 'name' for dotfile spec
+  - alias: dot-ssh-dir
+
+    # whether this dot is disabled
+    disabled: false
+
+    # note that from can be used here
+    from: []
+
+    # note that ignored-paths can be used here
+    ignored-paths:
+      - .some.ignored.pattern
+
+    # note that merge-opts can be used here
+    merge-opts:
+      value: overwrite
+
+    actions:
+      # method to be used (only 'copy' available and is the default)
+      method: copy
+
+      # path to copy from (can be either file or directory)
+      src: /my-ssh-dir-location
+
+      # path to copy to (will be created if does not exist)
+      dst: ~/.ssh
