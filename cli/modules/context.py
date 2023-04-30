@@ -93,7 +93,7 @@ class Context:
                     **local,
                 },
             )
-        except Exception as err:
+        except SyntaxError as err:
             self.logger.warning(
                 [
                     'Failed to apply context:',

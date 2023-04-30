@@ -10,8 +10,13 @@ from modules.util import env
 
 def _create_prompt(context, prompt_style, local=None):
     prompt = ''
+
     for part in prompt_style:
-        prompt += context.apply(part, local)
+        try:
+            prompt += context.apply(str(part), local)
+        except Exception:
+            prompt += str(part)
+
     return prompt
 
 
