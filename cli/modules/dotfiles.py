@@ -31,3 +31,5 @@ def process(context, dots_config):
         if 'actions' in dot_config:
             for action in dot_config.get('actions').astype(list):
                 process_action(action)
+        else:
+            process_action(dot_config)

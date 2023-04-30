@@ -1,0 +1,21 @@
+# Explicitly allow everything
+merge-opts:
+  dict: union_recursive
+  list: append
+  value: overwrite
+
+from:
+  obj:
+    key:
+      merge-opts:
+        list: illegal
+
+      list:
+        - a
+        - b
+
+obj:
+  # Should be an error since key has list: illegal
+  key:
+    list:
+      - c

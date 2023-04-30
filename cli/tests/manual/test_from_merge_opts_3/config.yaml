@@ -1,0 +1,43 @@
+# Explicitly allow everything
+merge-opts:
+  dict: union_recursive
+  list: append
+  value: overwrite
+
+from:
+  obj:
+    key:
+      merge-opts:
+        list: illegal
+
+      list:
+        - a
+        - b
+
+    prepend_key:
+      merge-opts:
+        list: prepend
+
+      list:
+        - a
+        - b
+
+    append_key:
+      merge-opts:
+        list: append
+
+      list:
+        - a
+        - b
+
+obj:
+  # Should NOT be an error since it is a separate key
+  # 'c' should be prepended
+  prepend_key:
+    list:
+      - c
+
+  # 'c' should be appended
+  append_key:
+    list:
+      - c

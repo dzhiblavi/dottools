@@ -1,0 +1,31 @@
+merge-opts:
+  dict: union_recursive
+  list: append
+  value: overwrite
+
+obj:
+  key:
+    merge-opts:
+      list: illegal
+
+    list:
+      - a
+      - b
+
+  prepend_key:
+    merge-opts:
+      list: prepend
+
+    list:
+      - c
+      - a
+      - b
+
+  append_key:
+    merge-opts:
+      list: append
+
+    list:
+      - a
+      - b
+      - c

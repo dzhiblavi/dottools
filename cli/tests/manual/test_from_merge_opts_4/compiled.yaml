@@ -1,0 +1,14 @@
+merge-opts:
+  dict: union_recursive
+  list: append
+  value: overwrite
+
+obj:
+  key:
+    merge-opts:
+      list: prepend
+
+    list:
+      - c
+      - a
+      - b

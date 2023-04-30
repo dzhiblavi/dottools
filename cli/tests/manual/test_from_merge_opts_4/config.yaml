@@ -1,0 +1,26 @@
+# Explicitly allow everything
+merge-opts:
+  dict: union_recursive
+  list: append
+  value: overwrite
+
+from:
+  obj:
+    key:
+      # This just makes it harder for user (one who imports this object through 'from')
+      # to override values: one has to override list: illegal explicitly
+      merge-opts:
+        list: illegal
+
+      list:
+        - a
+        - b
+
+obj:
+  # Should NOT be an error since merge-opt gets explicitly overriden
+  key:
+    merge-opts:
+      list: prepend
+
+    list:
+      - c

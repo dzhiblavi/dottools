@@ -1,7 +1,3 @@
-"""
-TODO
-"""
-
 import os
 import re
 
