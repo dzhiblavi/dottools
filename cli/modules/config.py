@@ -1,5 +1,4 @@
 import re
-import yaml
 
 from functools import reduce
 from modules.util import merge

@@ -74,17 +74,33 @@ def _get_value_merge_options(opts):
     return _get_opts(opts, 'value', ValueMergeOption)
 
 
-def _merge_impl_list(ctx, base, extend, opts):
-    ctx.logger.info(
+def _dump_yaml_lines(obj):
+    return yaml.dump(obj, indent=2).replace('%', '%%').splitlines()
+
+
+def _log_merge_start(logger, opts, base, extend):
+    logger.info(
         [
-            'Merging lists',
+            'Merging:',
             '> options:'
-        ] + yaml.dump(opts, indent=2).splitlines() + [
+        ] + _dump_yaml_lines(opts) + [
             '> base:',
-        ] + yaml.dump(base, indent=2).splitlines() + [
+        ] + _dump_yaml_lines(base) + [
             '> extend with:',
-        ] + yaml.dump(extend, indent=2).splitlines(),
+        ] + _dump_yaml_lines(extend),
     )
+
+
+def _log_merge_result(logger, result):
+    logger.info(
+        [
+            '> result:',
+        ] + _dump_yaml_lines(result),
+    )
+
+
+def _merge_impl_list(ctx, base, extend, opts):
+    _log_merge_start(ctx.logger, opts, base, extend)
 
     if not isinstance(base, list) or not isinstance(extend, list):
         raise NonMatchingTypes('non-list values passed to list merge function')
@@ -106,12 +122,7 @@ def _merge_impl_list(ctx, base, extend, opts):
     if list_opt == ListMergeOption.OVERWRITE:
         result = extend
 
-    ctx.logger.info(
-        [
-            '> result:',
-        ] + yaml.dump(result, indent=2).splitlines(),
-    )
-
+    _log_merge_result(ctx.logger, result)
     return result
 
 
@@ -147,16 +158,7 @@ def _dict_union_add_only(base, extend):
 
 
 def _merge_impl_dict(ctx, base, extend, opts):
-    ctx.logger.info(
-        [
-            'Merging dicts',
-            '> options:'
-        ] + yaml.dump(opts, indent=2).splitlines() + [
-            '> base:',
-        ] + yaml.dump(base, indent=2).splitlines() + [
-            '> extend with:',
-        ] + yaml.dump(extend, indent=2).splitlines(),
-    )
+    _log_merge_start(ctx.logger, opts, base, extend)
 
     if not isinstance(base, dict) or not isinstance(extend, dict):
         raise NonMatchingTypes('non-dict passed in dict merge function')
@@ -179,26 +181,12 @@ def _merge_impl_dict(ctx, base, extend, opts):
     if dict_opt == DictMergeOption.OVERWRITE:
         result = extend
 
-    ctx.logger.info(
-        [
-            '> result:',
-        ] + yaml.dump(result, indent=2).splitlines(),
-    )
-
+    _log_merge_result(ctx.logger, result)
     return result
 
 
 def _merge_impl_value(ctx, base, extend, opts):
-    ctx.logger.info(
-        [
-            'Merging values',
-            '> options:'
-        ] + yaml.dump(opts, indent=2).splitlines() + [
-            '> base:',
-        ] + yaml.dump(base, indent=2).splitlines() + [
-            '> extend with:',
-        ] + yaml.dump(extend, indent=2).splitlines(),
-    )
+    _log_merge_start(ctx.logger, opts, base, extend)
 
     if not isinstance(extend, type(base)):
         raise UnmergeableValues('values of different types cannot be merged')
@@ -214,12 +202,7 @@ def _merge_impl_value(ctx, base, extend, opts):
     if value_opt == ValueMergeOption.OVERWRITE:
         result = extend
 
-    ctx.logger.info(
-        [
-            '> result:',
-        ] + yaml.dump(result, indent=2).splitlines()
-    )
-
+    _log_merge_result(ctx.logger, result)
     return result
 
 

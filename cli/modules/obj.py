@@ -5,10 +5,6 @@ from modules import common
 
 
 class Object:
-    """
-    TODO
-    """
-
     def __init__(self, context):
         self._context = context
 
@@ -23,10 +19,6 @@ class Object:
 
 
 class FileObject(Object):
-    """
-    TODO
-    """
-
     def __init__(self, context, dst):
         Object.__init__(self, context)
 

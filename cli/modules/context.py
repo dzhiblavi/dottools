@@ -56,9 +56,8 @@ class Context:
         else:
             self.dot_generated = os.path.join(dot_root, 'dots', 'generated_dry-run')
 
-        self.cfg = config.create(
-            self, _evaluate_context(self, tools.load_yaml_by_path(config_path))
-        )
+        self.raw_cfg = tools.load_yaml_by_path(config_path)
+        self.cfg = config.create(self, _evaluate_context(self, self.raw_cfg))
 
     def _join(self, head, path):
         result = os.path.join(head, path)

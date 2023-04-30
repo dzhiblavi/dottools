@@ -16,30 +16,9 @@ def _create_prompt(context, prompt_style, local=None):
 
 
 def _get_prompt(context, config):
-    host_name = config.get('host-name', '<unknown>').astype(str)
-
-    # TODO: move default prompt style to yaml config and inherit from it
-    with context.logger.silence():
-        default_prompt_style = [
-            "'<'",
-            "fmt('NV', fg='light_green') if ctx.has_gpu else fmt('NONV', fg='light_red')",
-            "'> '",
-            "'<'",
-            "fmt('h', fg='light_green')",
-            "'${TMUX:+:\033[0;33mtx/${TMUX_PANE#%}\033[0m}'",
-            "':'",
-            f"fmt('{host_name}', fg='light_cyan')",
-            "'>'",
-        ]
-        default_prompt = _create_prompt(context, default_prompt_style)
-
     return _create_prompt(
         context=context,
-        prompt_style=config.get('prompt_style', default_prompt_style).astype(list),
-        local={
-            'default': default_prompt,
-            'default_style': default_prompt_style,
-        },
+        prompt_style=config.get('prompt_style').astype(list),
     )
 
 
@@ -115,7 +94,7 @@ class Shellrc(obj.FileObject):
         )
 
         if not shellrc_config:
-            raise AssertionError('None shellrc config has been provided')
+            raise AssertionError('No shellrc config has been provided')
 
         self._config = shellrc_config
 

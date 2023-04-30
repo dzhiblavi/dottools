@@ -1,16 +1,8 @@
-"""
-TODO
-"""
-
 import os
 from modules import obj
 
 
 def process(context, dots_config):
-    """
-    TODO
-    """
-
     def process_action(dot_config):
         with context.logger.indent(alias):
             if dot_config.get('disabled', False).astype(bool):
