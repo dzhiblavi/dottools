@@ -1,0 +1,31 @@
+# Modify list concatenation globally
+merge-opts:
+  list: prepend
+
+from:
+  object:
+    subobject:
+      from:
+        sub_key:
+          - a
+          - b
+
+      some_list:
+        - d
+        - e
+
+object:
+  subobject:
+    from:
+      sub_key:
+        - c
+        - d
+
+      some_list:
+        list:
+          - k
+          - l
+
+    some_list:
+      - f
+      - g

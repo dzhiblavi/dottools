@@ -1,0 +1,22 @@
+sshrc:
+  # Raw values should be left as they are
+  key_value: some_value
+
+  # (2) Lists are transformed to dicts: x -> { 'list': x }
+  # It is done to allow add metadata to lists (ignored-paths, merge-opts)
+  key_list:
+    list:
+      - one
+      - two
+      - three
+
+  key_dict:
+    sun: yellow
+    sea: blue
+    car: black
+
+    # Same as (2) for this list
+    sublist:
+      list:
+        - item
+        - item

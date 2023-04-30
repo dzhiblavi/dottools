@@ -1,0 +1,47 @@
+list_default:
+  key:
+    list:
+      - a
+      - b
+      - c
+      - d
+
+list_append:
+  key:
+    merge-opts:
+      list: append
+
+    list:
+      - a
+      - b
+      - c
+      - d
+
+list_prepend:
+  key:
+    merge-opts:
+      list: prepend
+
+    list:
+      - c
+      - d
+      - a
+      - b
+
+list_preserve:
+  key:
+    merge-opts:
+      list: preserve
+
+    list:
+      - a
+      - b
+
+list_overwrite:
+  key:
+    merge-opts:
+      list: overwrite
+
+    list:
+      - c
+      - d

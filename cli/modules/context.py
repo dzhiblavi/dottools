@@ -15,10 +15,10 @@ from modules.util import tools
 
 def _evaluate_context(ctx, obj):
     if isinstance(obj, str):
-        if 'ctx' not in obj:
+        try:
+            return _evaluate_context(ctx, ctx.apply(obj))
+        except Exception:
             return obj
-
-        return _evaluate_context(ctx, ctx.apply(obj))
 
     applier = partial(_evaluate_context, ctx)
 
@@ -35,8 +35,8 @@ def _evaluate_context(ctx, obj):
 
 
 class Context:
-    def __init__(self, config_path, dot_root, dry_run, log_level, show_diff):
-        self.logger = logger.Logger(log_level, show_diff)
+    def __init__(self, config_path, dot_root, dry_run, logger_impl):
+        self.logger = logger_impl
         self.dry_run = dry_run
         self.cfg_path = config_path
         self.cfg_dir = os.path.dirname(os.path.dirname(config_path))
@@ -83,8 +83,9 @@ class Context:
     def apply(self, s, local=None):
         if not local:
             local = {}
+
         try:
-            result = eval(
+            return eval(
                 s, {},
                 {
                     'ctx': self,
@@ -102,17 +103,7 @@ class Context:
                 ],
                 s, str(err),
             )
-            result = s
-
-        self.logger.info(
-            [
-                'Applied context',
-                'src\t= %s',
-                'res\t= %s',
-            ],
-            s, result,
-        )
-        return result
+            raise
 
     def disable_dry_run(self):
         class _Disable:

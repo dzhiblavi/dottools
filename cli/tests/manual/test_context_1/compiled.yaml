@@ -1,0 +1,15 @@
+rel: "^.*test_context_1/compiled.yaml$"
+
+lib: "^.*lib/print.sh$"
+
+common: "^.*common/aliases.sh"
+
+bin: "^.*bin/check_shell"
+
+load:
+  key:
+    list:
+      - value
+      - item
+
+  sun: blue

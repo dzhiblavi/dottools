@@ -1,0 +1,9 @@
+# This example shows the 'illegal' option for values
+from:
+  merge-opts:
+    value: illegal
+
+  key: value
+
+# This should fail
+key: other_value

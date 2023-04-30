@@ -1,0 +1,16 @@
+sshrc:
+  key_value: some_value
+
+  key_list:
+    - one
+    - two
+    - three
+
+  key_dict:
+    sun: yellow
+    sea: blue
+    car: black
+
+    sublist:
+      - item
+      - item

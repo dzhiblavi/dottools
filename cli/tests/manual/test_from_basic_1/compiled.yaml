@@ -1,0 +1,25 @@
+key1: value
+
+key2:
+  list:
+    - a
+    - b
+    - c:
+        list:
+          - d
+          - e
+
+key3:
+  value1: a
+  value2: b
+  value3:
+    list:
+      - z
+      - y
+
+key4: value_key_4
+
+list5:
+  list:
+    - t
+    - h

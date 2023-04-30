@@ -1,7 +1,3 @@
-"""
-TODO
-"""
-
 import sys
 
 from functools import partial
@@ -10,10 +6,9 @@ from modules.util import colors
 
 LEVEL_NONE = 0
 LEVEL_ACTION = 1
-LEVEL_DIFF = 2
-LEVEL_ERROR = 3
-LEVEL_WARNING = 4
-LEVEL_INFO = 5
+LEVEL_ERROR = 2
+LEVEL_WARNING = 3
+LEVEL_INFO = 4
 
 
 class Logger:
@@ -95,23 +90,22 @@ class Logger:
     def _build_log_args(self, preamble, fmt, *args):
         return [preamble + self._fmt('| ' + ' ' * self._indent, fmt), *args]
 
-    def write_plain(self, text):
-        if self._level < LEVEL_INFO:
-            return
-
     def info(self, fmt, *args):
         if self._level < LEVEL_INFO:
             return
+
         self._impl.info(*self._build_log_args(self._preamble(), fmt, *args))
 
     def warning(self, fmt, *args):
         if self._level < LEVEL_WARNING:
             return
+
         self._impl.warning(*self._build_log_args(self._preamble(), fmt, *args))
 
     def error(self, fmt, *args):
         if self._level < LEVEL_ERROR:
             return
+
         self._impl.error(*self._build_log_args(self._preamble(), fmt, *args))
 
     def log_diff(self, fmt, *args):

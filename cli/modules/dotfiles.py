@@ -13,12 +13,12 @@ def process(context, dots_config):
 
     def process_action(dot_config):
         with context.logger.indent(alias):
-            if dot_config.get('disabled', False):
+            if dot_config.get('disabled', False).astype(bool):
                 context.logger.info('Dot is disabled', alias)
                 return
 
-            src = os.path.expanduser(dot_config['src'])
-            dst = os.path.expanduser(dot_config['dst'])
+            src = os.path.expanduser(dot_config.get('src').astype(str))
+            dst = os.path.expanduser(dot_config.get('dst').astype(str))
 
             if os.path.isdir(src):
                 objt = obj.CopyDirObject(context, src, dst, dot_config.ignored_paths())
@@ -33,9 +33,9 @@ def process(context, dots_config):
                 objt.backup()
                 objt.apply()
 
-    for dot_config in dots_config:
-        alias = dot_config.get("alias", "<no-alias>")
+    for dot_config in dots_config.astype(list):
+        alias = dot_config.get("alias", "<no-alias>").astype(str)
 
         if 'actions' in dot_config:
-            for action in dot_config['actions']:
+            for action in dot_config.get('actions').astype(list):
                 process_action(action)

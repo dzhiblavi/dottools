@@ -1,0 +1,14 @@
+value_default:
+  key: other_value_1
+
+value_overwrite:
+  merge-opts:
+    value: overwrite
+
+  key: other_value_1
+
+value_preserve:
+  merge-opts:
+    value: preserve
+
+  key: value_1

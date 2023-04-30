@@ -1,0 +1,80 @@
+# 'from' is a reserved key
+# it will initialize the current object (which contains 'from')
+# with the value(s) listed in it and then other kv pairs will be overlayed
+
+# This example shows how values can be overriden using merge-opts
+
+# default merge-opts:
+# value: overwrite
+# list: append
+# dict: union_recursive
+
+from:
+  # use default merge-opts (list: append)
+  - list_default:
+      key:
+        - a
+        - b
+
+  - list_append:
+      key:
+        # merge-opts can be defined locally for list
+        # using separate 'list' field to represent the value
+        merge-opts:
+          list: append
+
+        list:
+          - a
+          - b
+
+  - list_prepend:
+      key:
+        merge-opts:
+          list: prepend
+
+        list:
+          - a
+          - b
+
+  - list_preserve:
+      key:
+        merge-opts:
+          list: preserve
+
+        list:
+          - a
+          - b
+
+  - list_overwrite:
+      key:
+        merge-opts:
+          list: overwrite
+
+        list:
+          - a
+          - b
+
+list_default:
+  key:
+    - c
+    - d
+
+list_append:
+  key:
+    - c
+    - d
+
+list_prepend:
+  key:
+    - c
+    - d
+
+list_preserve:
+  key:
+    - c
+    - d
+
+list_overwrite:
+  key:
+    - c
+    - d

@@ -1,0 +1,15 @@
+# given relative path from the directory of this file,
+# gives full absolute path
+rel: ctx.rel('test_context_1/compiled.yaml')
+
+# absolute path of script in lib directory
+lib: ctx.lib('print.sh')
+
+# absolute path of script in common directory
+common: ctx.common('aliases.sh')
+
+# absolute path of script in bin directory
+bin: ctx.bin('check_shell')
+
+# load yaml from another file, relativity same as ctx.rel
+load: ctx.load('test_context_1/loaded.yaml')

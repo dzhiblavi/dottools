@@ -54,11 +54,17 @@ def parse_args():
     )
 
     subparsers = parser.add_subparsers(title='Commands', dest='command')
-    subparsers.add_parser('show', help='Show preprocessed configuration')
     subparsers.add_parser('shellrc', help='Install .shellrc')
     subparsers.add_parser('dotfiles', help='Install dotfiles')
     subparsers.add_parser('all', help='Apply everything')
     subparsers.add_parser('diff', help='Diff mode')
+
+    compile_parser = subparsers.add_parser('compile', help='Show preprocessed configuration')
+    compile_parser.add_argument(
+        '--full',
+        help='Print extended config value',
+        action='store_true',
+    )
 
     return parser.parse_args()
 
@@ -68,28 +74,26 @@ def main(args):
     Cli main function
     """
 
-    if args.dry_run:
-        args.log_level = max(args.log_level, logger.LEVEL_ACTION)
-
     if args.command == 'diff':
         args.diff = True
         args.dry_run = True
-        args.log_level = max(args.log_level, logger.LEVEL_DIFF)
 
     ctx = context.Context(
         config_path=os.path.realpath(args.config_file),
         dot_root=os.path.realpath(args.root),
         dry_run=args.dry_run,
-        log_level=args.log_level,
-        show_diff=args.diff,
+        logger_impl=logger.Logger(args.log_level, args.diff),
     )
 
-    if args.command in {'show'}:
-        print(yaml.dump(ctx.cfg.to_dict(), indent=2))
+    if args.command in {'compile'}:
+        if args.full:
+            print(yaml.dump(ctx.cfg, indent=2))
+        else:
+            print(yaml.dump(ctx.cfg.to_dict(), indent=2))
 
     if args.command in {'shellrc', 'all'}:
         with ctx.logger.indent(offset=0, label='shellrc'):
-            shellrc.process(ctx, ctx.cfg['shellrc'])
+            shellrc.process(ctx, ctx.cfg.get('shellrc'))
 
     if args.command in {'dotfiles', 'all'}:
         with ctx.logger.indent(offset=0, label='dots'):
@@ -97,7 +101,8 @@ def main(args):
 
     if args.command in {'diff'}:
         with ctx.logger.indent(offset=0, label='shellrc'):
-            shellrc.process(ctx, ctx.cfg['shellrc'])
+            shellrc.process(ctx, ctx.cfg.get('shellrc'))
+
         with ctx.logger.indent(offset=0, label='dots'):
             dotfiles.process(ctx, ctx.cfg.get('dots', []))
 

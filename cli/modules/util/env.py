@@ -1,7 +1,3 @@
-"""
-TODO
-"""
-
 _PREFIX = "DOTTOOLS"
 
 HOST_NAME_ENV = f"{_PREFIX}_HOST_NAME"
