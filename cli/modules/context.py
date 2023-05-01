@@ -1,38 +1,36 @@
 import os
-import re
 
-from functools import partial
-
-from modules import config
 from modules.util import colors
 from modules.util import logger
 from modules.util import tools
 
 
-def _evaluate_context(ctx, obj):
-    if isinstance(obj, str):
-        try:
-            return _evaluate_context(ctx, ctx.apply(obj))
-        except Exception:
-            return obj
+_global_context = None
 
-    applier = partial(_evaluate_context, ctx)
 
-    if isinstance(obj, list):
-        return list(map(applier, obj))
+def override_context(context_instance):
+    global _global_context
+    _global_context = context_instance
 
-    if isinstance(obj, dict):
-        return {
-            key: applier(value)
-            for key, value in obj.items()
-        }
 
-    return obj
+def init_context(context_instance):
+    global _global_context
+    assert _global_context is None, \
+           'Context has already been initialized'
+
+    override_context(context_instance)
+
+
+def context():
+    global _global_context
+    assert _global_context is not None, \
+           'Context has not been initialized'
+
+    return _global_context
 
 
 class Context:
-    def __init__(self, config_path, dot_root, dry_run, logger_impl):
-        self.logger = logger_impl
+    def __init__(self, config_path, dot_root, dry_run):
         self.dry_run = dry_run
         self.cfg_path = config_path
         self.cfg_dir = os.path.dirname(os.path.dirname(config_path))
@@ -51,9 +49,6 @@ class Context:
             self.dot_generated = os.path.join(dot_root, 'dots', 'generated')
         else:
             self.dot_generated = os.path.join(dot_root, 'dots', 'generated_dry-run')
-
-        self.raw_cfg = tools.load_yaml_by_path(config_path)
-        self.cfg = config.create(self, _evaluate_context(self, self.raw_cfg))
 
     def _join(self, head, path):
         result = os.path.join(head, path)
@@ -90,7 +85,7 @@ class Context:
                 },
             )
         except SyntaxError as err:
-            self.logger.warning(
+            logger.logger().warning(
                 [
                     'Failed to apply context:',
                     'src\t= %s',
@@ -113,3 +108,21 @@ class Context:
                 self._ctx.dry_run = self._old
 
         return _Disable(self)
+
+    def evaluate(self, obj):
+        if isinstance(obj, str):
+            try:
+                return self.evaluate(self.apply(obj))
+            except Exception:
+                return obj
+
+        if isinstance(obj, list):
+            return list(map(self.evaluate, obj))
+
+        if isinstance(obj, dict):
+            return {
+                key: self.evaluate(value)
+                for key, value in obj.items()
+            }
+
+        return obj

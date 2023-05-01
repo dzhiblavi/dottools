@@ -1,25 +1,18 @@
 #!/usr/bin/env python3
 
-"""
-Yet another dotfiles management tool
-"""
-
 import os
+import re
 import yaml
 import argparse
 
 from modules import context
-from modules import shellrc
-from modules import dotfiles
-from modules.util import env
-from modules.util import logger
+from modules import config
+from modules.plugins import plugin
+from modules.util import env, logger, tools
 
 
-def parse_args():
-    """
-    Parses argument from command line
-    """
-    parser = argparse.ArgumentParser(description='The .shellrc and dottools installer tool')
+def _parse_args():
+    parser = argparse.ArgumentParser(description='Yet another yet another dotfiles management tool')
 
     parser.add_argument(
         '--config-file', '-c',
@@ -35,30 +28,27 @@ def parse_args():
         ),
     )
     parser.add_argument(
-        '--dry-run',
-        help='Only print which actions will be done instead of doing anything',
-        default=False,
-        action='store_true',
-    )
-    parser.add_argument(
         '--log-level', '-l',
-        help='Logging level [0..3]',
+        help='Logging level [None=0..All=5]',
         default=1,
         action='store',
         type=int,
     )
     parser.add_argument(
-        '--diff', '-d',
-        help='Show diff',
+        '--dry-run',
+        help='Only print actions without actually applying them',
         action='store_true',
+    )
+    parser.add_argument(
+        '--field', '-f',
+        help='The object to be processed',
+        default='.*',
     )
 
     subparsers = parser.add_subparsers(title='Commands', dest='command')
-    subparsers.add_parser('shellrc', help='Install .shellrc')
-    subparsers.add_parser('dotfiles', help='Install dotfiles')
-    subparsers.add_parser('all', help='Apply everything')
-    subparsers.add_parser('diff', help='Diff mode')
-
+    subparsers.add_parser('diff', help='Show difference')
+    subparsers.add_parser('plan', help='Print actions that will be done when apply is used')
+    subparsers.add_parser('apply', help='Apply configuration')
     compile_parser = subparsers.add_parser('compile', help='Show preprocessed configuration')
     compile_parser.add_argument(
         '--full',
@@ -69,43 +59,81 @@ def parse_args():
     return parser.parse_args()
 
 
-def main(args):
-    """
-    Cli main function
-    """
+def _apply_command(args, plugin_instance, command):
+    with logger.logger().indent(label=command):
+        if command == 'compile':
+            if args.full:
+                logger.logger().output(
+                    [''] + tools.safe_dump_yaml_lines(plugin_instance.config)
+                )
+            else:
+                logger.logger().output(
+                    [''] + tools.safe_dump_yaml_lines(plugin_instance.config.to_dict())
+                )
+            return
 
+        if command == 'diff':
+            plugin.Plugin.log_difference(plugin_instance.difference())
+            return
+
+        if command == 'apply':
+            if not plugin.Plugin.any_difference(plugin_instance.difference()):
+                logger.logger().info('No difference, nothing done')
+                return
+
+            plugin_instance.backup()
+            plugin_instance.apply()
+            return
+
+        assert False, f'Invalid command {command}'
+
+
+def main(args):
     if args.command == 'diff':
         args.diff = True
         args.dry_run = True
+    else:
+        args.diff = False
 
-    ctx = context.Context(
-        config_path=os.path.realpath(args.config_file),
-        dot_root=os.path.realpath(args.root),
-        dry_run=args.dry_run,
-        logger_impl=logger.Logger(args.log_level, args.diff),
+    if args.command == 'plan':
+        args.dry_run = True
+        args.command = 'apply'
+
+    config_path = os.path.realpath(args.config_file)
+    logger.init_logger(logger.Logger(level=args.log_level, show_diff=args.diff))
+    context.init_context(
+        context.Context(
+            config_path=config_path,
+            dot_root=os.path.realpath(args.root),
+            dry_run=args.dry_run,
+        ),
     )
 
-    if args.command in {'compile'}:
-        if args.full:
-            print(yaml.dump(ctx.cfg, indent=2))
-        else:
-            print(yaml.dump(ctx.cfg.to_dict(), indent=2))
+    raw_cfg = tools.load_yaml_by_path(config_path)
+    cfg = config.create(context.context().evaluate(raw_cfg))
 
-    if args.command in {'shellrc', 'all'}:
-        with ctx.logger.indent(offset=0, label='shellrc'):
-            shellrc.process(ctx, ctx.cfg.get('shellrc'))
+    logger.logger().info(
+        ['Preprocessed configuration'] + tools.safe_dump_yaml_lines(cfg.to_dict())
+    )
 
-    if args.command in {'dotfiles', 'all'}:
-        with ctx.logger.indent(offset=0, label='dots'):
-            dotfiles.process(ctx, ctx.cfg.get('dots', []))
+    matcher = re.compile(args.field)
+    all_plugins = plugin.registry().create(cfg).get_all_plugins_list()
 
-    if args.command in {'diff'}:
-        with ctx.logger.indent(offset=0, label='shellrc'):
-            shellrc.process(ctx, ctx.cfg.get('shellrc'))
+    for name, plug in all_plugins:
+        if not matcher.search(name):
+            logger.logger().info(
+                [
+                    'Skipping plugin since it does not match field',
+                    'plugin\t= %s',
+                    'regex\t= %s',
+                ], name, args.field,
+            )
+            continue
 
-        with ctx.logger.indent(offset=0, label='dots'):
-            dotfiles.process(ctx, ctx.cfg.get('dots', []))
+        with logger.logger().indent(label=name):
+            plug.build()
+            _apply_command(args, plug, args.command)
 
 
 if __name__ == '__main__':
-    main(parse_args())
+    main(_parse_args())

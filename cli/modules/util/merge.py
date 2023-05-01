@@ -1,6 +1,8 @@
 import enum
 import yaml
 
+from modules.util import logger, tools
+
 
 class UnmergeableValues(Exception):
     """
@@ -74,33 +76,29 @@ def _get_value_merge_options(opts):
     return _get_opts(opts, 'value', ValueMergeOption)
 
 
-def _dump_yaml_lines(obj):
-    return yaml.dump(obj, indent=2).replace('%', '%%').splitlines()
-
-
-def _log_merge_start(logger, opts, base, extend):
-    logger.info(
+def _log_merge_start(opts, base, extend):
+    logger.logger().info(
         [
             'Merging:',
             '> options:'
-        ] + _dump_yaml_lines(opts) + [
+        ] + tools.safe_dump_yaml_lines(opts) + [
             '> base:',
-        ] + _dump_yaml_lines(base) + [
+        ] + tools.safe_dump_yaml_lines(base) + [
             '> extend with:',
-        ] + _dump_yaml_lines(extend),
+        ] + tools.safe_dump_yaml_lines(extend),
     )
 
 
-def _log_merge_result(logger, result):
-    logger.info(
+def _log_merge_result(result):
+    logger.logger().info(
         [
             '> result:',
-        ] + _dump_yaml_lines(result),
+        ] + tools.safe_dump_yaml_lines(result),
     )
 
 
-def _merge_impl_list(ctx, base, extend, opts):
-    _log_merge_start(ctx.logger, opts, base, extend)
+def _merge_impl_list(base, extend, opts):
+    _log_merge_start(opts, base, extend)
 
     if not isinstance(base, list) or not isinstance(extend, list):
         raise NonMatchingTypes('non-list values passed to list merge function')
@@ -122,20 +120,20 @@ def _merge_impl_list(ctx, base, extend, opts):
     if list_opt == ListMergeOption.OVERWRITE:
         result = extend
 
-    _log_merge_result(ctx.logger, result)
+    _log_merge_result(result)
     return result
 
 
-def _dict_union_recursive(ctx, base, extend, opts):
+def _dict_union_recursive(base, extend, opts):
     copy = dict(base)
-    opts = _merged_merge_opts(ctx, base, extend, opts)
+    opts = _merged_merge_opts(base, extend, opts)
 
     for key, base_value in copy.items():
         if key not in extend:
             continue
 
-        with ctx.logger.indent(f'#{key}'):
-            copy[key] = merge(ctx, base_value, extend[key], opts)
+        with logger.logger().indent(f'#{key}'):
+            copy[key] = merge(base_value, extend[key], opts)
 
     for key, extend_value in extend.items():
         if key in copy:
@@ -157,20 +155,20 @@ def _dict_union_add_only(base, extend):
     return copy
 
 
-def _merge_impl_dict(ctx, base, extend, opts):
-    _log_merge_start(ctx.logger, opts, base, extend)
+def _merge_impl_dict(base, extend, opts):
+    _log_merge_start(opts, base, extend)
 
     if not isinstance(base, dict) or not isinstance(extend, dict):
         raise NonMatchingTypes('non-dict passed in dict merge function')
 
-    opts = _merged_merge_opts(ctx, base, extend, opts)
+    opts = _merged_merge_opts(base, extend, opts)
     dict_opt = _get_dict_merge_options(opts)
 
     if dict_opt == DictMergeOption.ILLEGAL:
         raise UnmergeableValues('dicts merge is restricted via config')
 
     if dict_opt == DictMergeOption.UNION_RECURSIVE:
-        result = _dict_union_recursive(ctx, base, extend, opts)
+        result = _dict_union_recursive(base, extend, opts)
 
     if dict_opt == DictMergeOption.UNION_ADD_ONLY:
         result = _dict_union_add_only(base, extend)
@@ -181,12 +179,12 @@ def _merge_impl_dict(ctx, base, extend, opts):
     if dict_opt == DictMergeOption.OVERWRITE:
         result = extend
 
-    _log_merge_result(ctx.logger, result)
+    _log_merge_result(result)
     return result
 
 
-def _merge_impl_value(ctx, base, extend, opts):
-    _log_merge_start(ctx.logger, opts, base, extend)
+def _merge_impl_value(base, extend, opts):
+    _log_merge_start(opts, base, extend)
 
     if not isinstance(extend, type(base)):
         raise UnmergeableValues('values of different types cannot be merged')
@@ -202,40 +200,39 @@ def _merge_impl_value(ctx, base, extend, opts):
     if value_opt == ValueMergeOption.OVERWRITE:
         result = extend
 
-    _log_merge_result(ctx.logger, result)
+    _log_merge_result(result)
     return result
 
 
-def _merge_impl(ctx, base, extend, opts):
+def _merge_impl(base, extend, opts):
     if isinstance(base, list):
-        with ctx.logger.indent(label='list'):
-            return _merge_impl_list(ctx, base, extend, opts)
+        with logger.logger().indent(label='list'):
+            return _merge_impl_list(base, extend, opts)
 
     if isinstance(base, dict):
-        with ctx.logger.indent(label='dict'):
-            return _merge_impl_dict(ctx, base, extend, opts)
+        with logger.logger().indent(label='dict'):
+            return _merge_impl_dict(base, extend, opts)
 
-    with ctx.logger.indent(label='value'):
-        return _merge_impl_value(ctx, base, extend, opts)
+    with logger.logger().indent(label='value'):
+        return _merge_impl_value(base, extend, opts)
 
 
-def _merged_merge_opts(ctx, base, extend, opts):
+def _merged_merge_opts(base, extend, opts):
     return merge_opts(
-        ctx,
-        get_merge_opts(ctx, base, opts),
-        get_merge_opts(ctx, extend),
+        get_merge_opts(base, opts),
+        get_merge_opts(extend),
     )
 
 
-def merge(ctx, base, extend, opts):
+def merge(base, extend, opts):
     """
     Merges extend into base using configuration provided in opts
     """
-    with ctx.logger.indent(label='merge'):
-        return _merge_impl(ctx, base, extend, opts)
+    with logger.logger().indent(label='merge'):
+        return _merge_impl(base, extend, opts)
 
 
-def merge_opts(ctx, opts_a, opts_b):
+def merge_opts(opts_a, opts_b):
     """
     Merges two merge options dictionaries
     using strategy supposedly well suited for such application (see below)
@@ -252,11 +249,11 @@ def merge_opts(ctx, opts_a, opts_b):
     if not opts_b:
         return opts_a
 
-    with ctx.logger.indent(label='merge-opts'):
-        return merge(ctx, opts_a, opts_b, opts_merging_opts)
+    with logger.logger().indent(label='merge-opts'):
+        return merge(opts_a, opts_b, opts_merging_opts)
 
 
-def get_merge_opts(ctx, obj, base_opts=None):
+def get_merge_opts(obj, base_opts=None):
     """
     Extracts merging options from base and merges base_opts with it
     """
@@ -266,4 +263,4 @@ def get_merge_opts(ctx, obj, base_opts=None):
     if 'merge-opts' not in obj:
         return base_opts
 
-    return merge_opts(ctx, base_opts, obj['merge-opts'])
+    return merge_opts(base_opts, obj['merge-opts'])

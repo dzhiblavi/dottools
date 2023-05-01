@@ -4,6 +4,7 @@ import pytest
 import cerberus
 
 from modules import context
+from modules.util import logger
 
 
 class _NoopContext:
@@ -37,10 +38,6 @@ class _SilentLogger:
         return _NoopContext()
 
 
-def get_logger():
-    return _SilentLogger()
-
-
 def get_dot_root():
     depth = 3
 
@@ -51,25 +48,25 @@ def get_dot_root():
     return path
 
 
-def ctx(config_path):
-    root = get_dot_root()
-
-    return context.Context(
-        config_path=os.path.join(root, config_path),
-        dot_root=root,
-        dry_run=True,
-        logger_impl=get_logger(),
-    )
-
-
-@pytest.fixture
-def logger():
-    return get_logger()
-
-
 @pytest.fixture
 def dot_root():
     return get_dot_root()
+
+
+def init_logger():
+    logger.override_logger(_SilentLogger())
+
+
+def init_context(config_path):
+    root = get_dot_root()
+
+    context.override_context(
+        context.Context(
+            config_path=os.path.join(root, config_path),
+            dot_root=root,
+            dry_run=True,
+        )
+    )
 
 
 def assert_same_regex(actual, expected):

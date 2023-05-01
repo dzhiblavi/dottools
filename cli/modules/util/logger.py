@@ -4,6 +4,30 @@ from functools import partial
 from modules.util import colors
 
 
+_global_logger = None
+
+
+def override_logger(logger_instance):
+    global _global_logger
+    _global_logger = logger_instance
+
+
+def init_logger(logger_instance):
+    assert _global_logger is None, \
+           'Logger is already initialized'
+
+    override_logger(logger_instance)
+
+
+def logger():
+    global _global_logger
+
+    assert _global_logger is not None, \
+           'Logger has not been initialized yet'
+
+    return _global_logger
+
+
 LEVEL_NONE = 0
 LEVEL_ACTION = 1
 LEVEL_ERROR = 2
@@ -60,13 +84,13 @@ class Logger:
         def error(self, fmt, *args):
             self._log('ERROR: ', fmt, *args)
 
-    def __init__(self, level, diff):
+    def __init__(self, level, show_diff):
         self._impl = self._StdErrImpl()
         self._action_fg_clr = 'green'
         self._indent = 0
         self._labels = []
         self._level = level
-        self._diff = diff
+        self._diff = show_diff
 
     def _preamble(self):
         indent = '-' * self._indent
@@ -89,6 +113,9 @@ class Logger:
 
     def _build_log_args(self, preamble, fmt, *args):
         return [preamble + self._fmt('| ' + ' ' * self._indent, fmt), *args]
+
+    def output(self, fmt, *args):
+        self._impl.info(*self._build_log_args(self._preamble(), fmt, *args))
 
     def info(self, fmt, *args):
         if self._level < LEVEL_INFO:

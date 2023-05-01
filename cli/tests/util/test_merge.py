@@ -6,7 +6,8 @@ from tests import tests_common
 
 @pytest.fixture
 def ctx():
-    return tests_common.ctx('cli/tests/yaml/empty.yaml')
+    tests_common.init_logger()
+    tests_common.init_context('cli/tests/yaml/empty.yaml')
 
 
 def test_illegal(ctx):
@@ -18,23 +19,23 @@ def test_illegal(ctx):
     }
 
     with pytest.raises(merge.UnmergeableValues):
-        merge.merge(ctx, [], [], opts)
+        merge.merge([], [], opts)
 
     with pytest.raises(merge.UnmergeableValues):
-        merge.merge(ctx, set(), set(), opts)
+        merge.merge(set(), set(), opts)
 
     with pytest.raises(merge.UnmergeableValues):
-        merge.merge(ctx, {}, {}, opts)
+        merge.merge({}, {}, opts)
 
     with pytest.raises(merge.UnmergeableValues):
-        merge.merge(ctx, '', '', opts)
+        merge.merge('', '', opts)
 
 
 def test_lists(ctx):
-    assert merge.merge(ctx, [1, 2, 3], [4, 5, 6], {'list': 'append'}) == [1, 2, 3, 4, 5, 6]
-    assert merge.merge(ctx, [1, 2, 3], [4, 5, 6], {'list': 'prepend'}) == [4, 5, 6, 1, 2, 3]
-    assert merge.merge(ctx, [1, 2, 3], [4, 5, 6], {'list': 'preserve'}) == [1, 2, 3]
-    assert merge.merge(ctx, [1, 2, 3], [4, 5, 6], {'list': 'overwrite'}) == [4, 5, 6]
+    assert merge.merge([1, 2, 3], [4, 5, 6], {'list': 'append'}) == [1, 2, 3, 4, 5, 6]
+    assert merge.merge([1, 2, 3], [4, 5, 6], {'list': 'prepend'}) == [4, 5, 6, 1, 2, 3]
+    assert merge.merge([1, 2, 3], [4, 5, 6], {'list': 'preserve'}) == [1, 2, 3]
+    assert merge.merge([1, 2, 3], [4, 5, 6], {'list': 'overwrite'}) == [4, 5, 6]
 
 
 def test_dicts_plain(ctx):
@@ -54,7 +55,7 @@ def test_dicts_plain(ctx):
     }
 
     assert merge.merge(
-        ctx, base, extend,
+        base, extend,
         opts={
             'dict': 'union_recursive',
             'value': 'overwrite',
@@ -67,7 +68,7 @@ def test_dicts_plain(ctx):
     }
 
     assert merge.merge(
-        ctx, base, extend_uniq,
+        base, extend_uniq,
         opts={
             'dict': 'union_add_only'
         },
@@ -80,18 +81,18 @@ def test_dicts_plain(ctx):
     }
 
     with pytest.raises(merge.UnmergeableValues):
-        merge.merge(ctx, base, extend, opts={'dict': 'union_add_only'})
+        merge.merge(base, extend, opts={'dict': 'union_add_only'})
 
-    assert merge.merge(ctx, base, extend, opts={'dict': 'preserve'}) == base
-    assert merge.merge(ctx, base, extend, opts={'dict': 'overwrite'}) == extend
+    assert merge.merge(base, extend, opts={'dict': 'preserve'}) == base
+    assert merge.merge(base, extend, opts={'dict': 'overwrite'}) == extend
 
 
 def test_values(ctx):
-    assert merge.merge(ctx, 'abc', 'def', {'value': 'preserve'}) == 'abc'
-    assert merge.merge(ctx, 'abc', 'def', {'value': 'overwrite'}) == 'def'
+    assert merge.merge('abc', 'def', {'value': 'preserve'}) == 'abc'
+    assert merge.merge('abc', 'def', {'value': 'overwrite'}) == 'def'
 
     with pytest.raises(merge.UnmergeableValues):
-        merge.merge(ctx, 'abc', 123, {'value': 'overwrite'})
+        merge.merge('abc', 123, {'value': 'overwrite'})
 
 
 def test_dict_recursive_a(ctx):
@@ -134,7 +135,7 @@ def test_dict_recursive_a(ctx):
     }
 
     assert merge.merge(
-        ctx, base, extend,
+        base, extend,
         opts={
             'list': 'append',
             'set': 'union',
@@ -165,7 +166,7 @@ def test_dict_recursive_a(ctx):
     }
 
     assert merge.merge(
-        ctx, base, extend,
+        base, extend,
         opts={
             'list': 'prepend',
             'set': 'preserve',

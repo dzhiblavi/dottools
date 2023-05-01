@@ -19,3 +19,7 @@ def has_gpu():
 def load_yaml_by_path(path):
     with open(path, 'r', encoding='utf-8') as file:
         return yaml.safe_load(file)
+
+
+def safe_dump_yaml_lines(obj, indent=2):
+    return yaml.dump(obj, indent=indent).replace('%', '%%').splitlines()

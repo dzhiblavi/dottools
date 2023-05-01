@@ -49,7 +49,7 @@ def _apply_meta_to_raw_objects(obj, list_key=False):
     return obj
 
 
-def _get_objects_to_merge_to_and_remove_from_key(ctx, obj, opts):
+def _get_objects_to_merge_to_and_remove_from_key(obj, opts):
     from_objs = obj[FROM_DICT_KEY]
     del obj[FROM_DICT_KEY]
 
@@ -61,44 +61,44 @@ def _get_objects_to_merge_to_and_remove_from_key(ctx, obj, opts):
 
     return list(
         map(
-            lambda from_obj: _apply_merging(ctx, from_obj, opts),
+            lambda from_obj: _apply_merging(from_obj, opts),
             from_objs
         )
     )
 
 
-def _apply_merging_impl(ctx, obj, opts):
+def _apply_merging_impl(obj, opts):
     if FROM_DICT_KEY not in obj:
         return obj
 
     # Merge all objects in 'from' list sequentially
     merged_from_objects = reduce(
-        lambda val, from_obj: merge.merge(ctx, val, from_obj, opts),
-        _get_objects_to_merge_to_and_remove_from_key(ctx, obj, opts),
+        lambda val, from_obj: merge.merge(val, from_obj, opts),
+        _get_objects_to_merge_to_and_remove_from_key(obj, opts),
     )
 
     # Finally, merge obj (without 'from' key) into merged base objects
-    return merge.merge(ctx, merged_from_objects, obj, opts)
+    return merge.merge(merged_from_objects, obj, opts)
 
 
-def _apply_merging(ctx, obj, opts):
+def _apply_merging(obj, opts):
     if isinstance(obj, dict):
         # Get merge options from obj and merge them into
         # parent's merge options opts
-        opts = merge.get_merge_opts(ctx, obj, opts)
+        opts = merge.get_merge_opts(obj, opts)
 
         # first, apply merging to all subobjects
         for key, value in obj.items():
-            obj[key] = _apply_merging(ctx, value, opts)
+            obj[key] = _apply_merging(value, opts)
 
         # now we can merge the obj
-        return _apply_merging_impl(ctx, obj, opts)
+        return _apply_merging_impl(obj, opts)
 
     if isinstance(obj, list):
         # just apply merging to all elements in the list
         return list(
             map(
-                lambda from_obj: _apply_merging(ctx, from_obj, opts),
+                lambda from_obj: _apply_merging(from_obj, opts),
                 obj
             )
         )
@@ -125,7 +125,7 @@ def _create_config(obj, parent=None):
     return _Config(obj, parent)
 
 
-def create(ctx, obj):
+def create(obj):
     default_merge_opts = {
         'value': 'overwrite',
         'list': 'append',
@@ -133,7 +133,7 @@ def create(ctx, obj):
     }
 
     obj = _apply_meta_to_raw_objects(obj)
-    obj = _apply_merging(ctx, obj, default_merge_opts)
+    obj = _apply_merging(obj, default_merge_opts)
 
     return _create_config(obj)
 
@@ -168,17 +168,37 @@ class _Config:
     def __str__(self):
         return str(self._obj)
 
+    def istype(self, clazz):
+        if clazz == list:
+            if isinstance(self._obj, list):
+                return True
+
+            if isinstance(self._obj, dict) and 'list' in self._obj:
+                return True
+
+        if clazz == dict:
+            return isinstance(self._obj, dict) and 'list' not in self._obj
+
+        return isinstance(self._obj, clazz)
+
     def astype(self, clazz):
         obj = self._obj
 
-        if isinstance(obj, clazz):
-            return obj
+        if clazz == dict and isinstance(obj, dict):
+            # remove all config keys
+            return {
+                key: value
+                for key, value in obj.items()
+                if not self.is_config_key(key)
+            }
 
         if clazz == list and isinstance(obj, dict):
             if 'list' not in obj:
                 return []
-
             return obj['list'].astype(list)
+
+        if isinstance(obj, clazz):
+            return obj
 
         assert False, \
                f'Type mismatch: expected {clazz}, found {type(obj)}'
@@ -200,6 +220,7 @@ class _Config:
             return {
                 key: value.to_dict()
                 for key, value in self._obj.items()
+                if not self._is_internal_key(key)
             }
 
         if isinstance(self._obj, list):
@@ -208,10 +229,14 @@ class _Config:
         return self._obj
 
     def is_config_key(self, key):
-        return key in {
+        return self._is_internal_key(key) or key in {
             FROM_DICT_KEY,
             self.MERGE_OPTS_KEY,
             self.IGNORED_PATHS_KEY,
+        }
+
+    def _is_internal_key(self, key):
+        return key in {
             self.IGNORED_PATHS_RE_KEY,
         }
 

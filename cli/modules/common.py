@@ -1,16 +1,18 @@
 import os
 import shutil
 
+from modules.context import context
 from modules.util import diff
+from modules.util.logger import logger
 
 
-def _create_parent_dir_if_not_exists(context, file_path):
+def _create_parent_dir_if_not_exists(file_path):
     dir_name = os.path.dirname(file_path)
 
     if os.path.isdir(dir_name):
         return
 
-    context.logger.action(
+    logger().action(
         [
             'creating parent directory',
             'path\t= %s',
@@ -19,12 +21,12 @@ def _create_parent_dir_if_not_exists(context, file_path):
         file_path, dir_name,
     )
 
-    if not context.dry_run:
+    if not context().dry_run:
         os.makedirs(dir_name, exist_ok=True)
 
 
-def try_remove(context, file):
-    context.logger.action(
+def try_remove(file):
+    logger().action(
         [
             'trying to remove path',
             'path\t= %s',
@@ -32,7 +34,7 @@ def try_remove(context, file):
         file,
     )
 
-    if not context.dry_run:
+    if not context().dry_run:
         if os.path.isfile(file) or os.path.islink(file):
             os.remove(file)
         elif os.path.isdir(file):
@@ -41,11 +43,11 @@ def try_remove(context, file):
             os.unlink(file)
 
 
-def read_lines_or_empty(context, file):
+def read_lines_or_empty(file):
     file = os.path.expanduser(file)
 
     if not os.path.exists(file):
-        context.logger.warning(
+        logger().warning(
             [
                 'path does not exist, no lines read',
                 'path\t= %s',
@@ -58,10 +60,10 @@ def read_lines_or_empty(context, file):
         return list(file_obj.readlines())
 
 
-def write_lines(context, lines, path):
-    _create_parent_dir_if_not_exists(context, path)
+def write_lines(lines, path):
+    _create_parent_dir_if_not_exists(path)
 
-    context.logger.action(
+    logger().action(
         [
             'writing content to file',
             'path\t= %s',
@@ -69,15 +71,15 @@ def write_lines(context, lines, path):
         path,
     )
 
-    if not context.dry_run:
+    if not context().dry_run:
         with open(path, 'w', encoding='utf-8') as file:
             file.writelines(lines)
 
 
-def copy_file(context, src, dst):
-    _create_parent_dir_if_not_exists(context, dst)
+def copy_file(src, dst):
+    _create_parent_dir_if_not_exists(dst)
 
-    context.logger.action(
+    logger().action(
         [
             'copying file',
             'src\t= %s',
@@ -86,51 +88,20 @@ def copy_file(context, src, dst):
         src, dst,
     )
 
-    if not context.dry_run:
+    if not context().dry_run:
         shutil.copy(src, dst)
 
     return True
 
 
-def print_difference(context, lines_a, lines_b, obj):
-    difference = diff.get_diff_lines(lines_a, lines_b)
-    if difference:
-        context.logger.log_diff(
-            [
-                'Diff for object',
-                'obj\t= %s',
-                '%s',
-            ],
-            obj, ''.join(difference),
-        )
-        return True
-
-    return False
-
-
-def files_difference(context, src, dst):
-    src_lines = read_lines_or_empty(context, src)
-    dst_lines = read_lines_or_empty(context, dst)
-
-    difference = diff.get_diff_lines(dst_lines, src_lines)
-
-    if difference:
-        context.logger.log_diff(
-            [
-                'Diff for files',
-                'src\t= %s',
-                'dst\t= %s',
-                '%s',
-            ],
-            src, dst, ''.join(difference),
-        )
-        return True
-
-    return False
+def files_difference(src, dst):
+    return diff.get_diff_lines(
+        read_lines_or_empty(dst),
+        read_lines_or_empty(src),
+    )
 
 
 def recurse_directories(
-    context,
     src, dst,
     function,
     ignore_regex,
@@ -139,7 +110,7 @@ def recurse_directories(
     dst = os.path.abspath(dst)
 
     if any(map(lambda pattern: pattern.search(src), ignore_regex)):
-        context.logger.info(
+        logger().info(
             [
                 'Ignoring path',
                 'path\t= %s',
@@ -155,7 +126,6 @@ def recurse_directories(
     for path in os.scandir(src):
         if path.is_file():
             recurse_directories(
-                context=context,
                 src=path.path,
                 dst=os.path.join(dst, path.name),
                 function=function,
@@ -163,7 +133,6 @@ def recurse_directories(
             )
         else:
             recurse_directories(
-                context=context,
                 src=os.path.join(src, path.name),
                 dst=os.path.join(dst, path.name),
                 function=function,
