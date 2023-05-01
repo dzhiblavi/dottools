@@ -1,0 +1,18 @@
+object:
+  key_1: value_1
+
+  subobject:
+    key_2: value_2
+
+    key_same_1: self.getp('key_1').astype(str)
+    key_same_2: self.getp('object.key_1').astype(str)
+
+    key_same_3: self.getp('key_2').astype(str)
+    key_same_4: self.getp('subobject.key_2').astype(str)
+    key_same_5: self.getp('object.subobject.key_2').astype(str)
+
+  key_3: self.getp('key_1').astype(str)
+  key_4: self.getp('object.key_1').astype(str)
+  key_5: self.getp('object.subobject.key_2').astype(str)
+
+  key_6: self.getp('object.subobject').astype(dict)

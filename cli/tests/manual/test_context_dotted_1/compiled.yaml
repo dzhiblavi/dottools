@@ -1,0 +1,25 @@
+object:
+  key_1: value_1
+
+  subobject:
+    key_2: value_2
+
+    key_same_1: value_1
+    key_same_2: value_1
+
+    key_same_3: value_2
+    key_same_4: value_2
+    key_same_5: value_2
+
+  key_3: value_1
+  key_4: value_1
+  key_5: value_2
+
+  key_6:
+    key_2: value_2
+
+    key_same_1: value_1
+    key_same_2: value_1
+    key_same_3: value_2
+    key_same_4: value_2
+    key_same_5: value_2

@@ -243,12 +243,14 @@ class _Config:
 
     def getp(self, key, default=None):
         """
-        Gets the key from the first parent object that has it or the default value
+        Gets the key using the dotted notation
+        Searches key in this object plus all of its parents
         """
 
         obj = self
         while obj is not None:
             value = obj.get(key)
+
             if value is not None:
                 return value
 
@@ -259,12 +261,19 @@ class _Config:
     def get(self, key, default=None):
         """
         Gets the value by key from this config or the default one
+        uses the dot notation, i.e. a.b.c
         """
 
-        if not isinstance(self._obj, dict) or key not in self._obj:
-            return self._as_default(default)
+        parts = key.split('.')
 
-        return self._obj[key]
+        obj = self
+        for part in parts:
+            if not isinstance(obj._obj, dict) or part not in obj._obj:
+                return self._as_default(default)
+
+            obj = obj._obj[part]
+
+        return obj
 
     def to_dict(self):
         if isinstance(self._obj, dict):
