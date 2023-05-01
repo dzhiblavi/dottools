@@ -1,6 +1,7 @@
 import re
 
 from functools import reduce
+from modules.context import context
 from modules.util import merge
 
 
@@ -125,6 +126,33 @@ def _create_config(obj, parent=None):
     return _Config(obj, parent)
 
 
+def _evaluate(config):
+    if config.istype(str):
+        value = config.astype(str)
+
+        try:
+            config.set_obj(
+                context().apply(
+                    s=value,
+                    local={'self': config},
+                )
+            )
+        except Exception:
+            pass
+
+    if config.istype(list):
+        values = config.astype(list)
+        for item in values:
+            item = _evaluate(item)
+
+    if config.istype(dict):
+        values = config.astype(dict)
+        for key, value in values.items():
+            values[key] = _evaluate(value)
+
+    return config
+
+
 def create(obj):
     default_merge_opts = {
         'value': 'overwrite',
@@ -132,10 +160,14 @@ def create(obj):
         'dict': 'union_recursive',
     }
 
+    obj = context().evaluate(obj)
     obj = _apply_meta_to_raw_objects(obj)
     obj = _apply_merging(obj, default_merge_opts)
 
-    return _create_config(obj)
+    config = _create_config(obj)
+    config = _evaluate(config)
+
+    return config
 
 
 class _Config:
@@ -203,17 +235,36 @@ class _Config:
         assert False, \
                f'Type mismatch: expected {clazz}, found {type(obj)}'
 
-    def get(self, key, default_value=None):
-        return self._get_impl(key, default=_Config(obj=default_value, parent=self._parent))
+    def _as_default(self, default):
+        if default is not None:
+            return _Config(obj=default, parent=self)
 
-    def ignored_paths(self):
-        if isinstance(self._obj, dict):
-            if self.IGNORED_PATHS_RE_KEY not in self._obj:
-                self._obj[self.IGNORED_PATHS_RE_KEY] = self._build_ignored_path()
+        return default
 
-            return self._obj[self.IGNORED_PATHS_RE_KEY]
+    def getp(self, key, default=None):
+        """
+        Gets the key from the first parent object that has it or the default value
+        """
 
-        return self._find_ignored_paths_in_parents()
+        obj = self
+        while obj is not None:
+            value = obj.get(key)
+            if value is not None:
+                return value
+
+            obj = obj._parent
+
+        return self._as_default(default)
+
+    def get(self, key, default=None):
+        """
+        Gets the value by key from this config or the default one
+        """
+
+        if not isinstance(self._obj, dict) or key not in self._obj:
+            return self._as_default(default)
+
+        return self._obj[key]
 
     def to_dict(self):
         if isinstance(self._obj, dict):
@@ -240,19 +291,14 @@ class _Config:
             self.IGNORED_PATHS_RE_KEY,
         }
 
-    def _get_impl(self, key, default=None):
-        assert isinstance(self._obj, dict), \
-               f'Cannot get({key}) from non-dict value {self._obj}'
+    def ignored_paths(self):
+        if isinstance(self._obj, dict):
+            if self.IGNORED_PATHS_RE_KEY not in self._obj:
+                self._obj[self.IGNORED_PATHS_RE_KEY] = self._build_ignored_path()
 
-        if key not in self._obj:
-            return default
+            return self._obj[self.IGNORED_PATHS_RE_KEY]
 
-        obj = self._obj[key]
-
-        assert isinstance(obj, _Config), \
-               'Internal error: obj is not an instance of _Config'
-
-        return obj
+        return self._find_ignored_paths_in_parents()
 
     def _find_ignored_paths_in_parents(self):
         if not self._parent:

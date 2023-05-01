@@ -109,8 +109,7 @@ def main(args):
         ),
     )
 
-    raw_cfg = tools.load_yaml_by_path(config_path)
-    cfg = config.create(context.context().evaluate(raw_cfg))
+    cfg = config.create(tools.load_yaml_by_path(config_path))
 
     logger.logger().info(
         ['Preprocessed configuration'] + tools.safe_dump_yaml_lines(cfg.to_dict())

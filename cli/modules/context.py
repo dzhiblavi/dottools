@@ -70,6 +70,20 @@ class Context:
     def load(self, path):
         return tools.load_yaml_by_path(self.rel(path))
 
+    def disable_dry_run(self):
+        class _Disable:
+            def __init__(self, ctx):
+                self._ctx = ctx
+
+            def __enter__(self):
+                self._old = self._ctx.dry_run
+                self._ctx.dry_run = False
+
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                self._ctx.dry_run = self._old
+
+        return _Disable(self)
+
     def apply(self, s, local=None):
         if not local:
             local = {}
@@ -95,20 +109,6 @@ class Context:
             )
             raise
 
-    def disable_dry_run(self):
-        class _Disable:
-            def __init__(self, ctx):
-                self._ctx = ctx
-
-            def __enter__(self):
-                self._old = self._ctx.dry_run
-                self._ctx.dry_run = False
-
-            def __exit__(self, exc_type, exc_val, exc_tb):
-                self._ctx.dry_run = self._old
-
-        return _Disable(self)
-
     def evaluate(self, obj):
         if isinstance(obj, str):
             try:
@@ -117,7 +117,10 @@ class Context:
                 return obj
 
         if isinstance(obj, list):
-            return list(map(self.evaluate, obj))
+            return [
+                self.evaluate(item)
+                for item in obj
+            ]
 
         if isinstance(obj, dict):
             return {
