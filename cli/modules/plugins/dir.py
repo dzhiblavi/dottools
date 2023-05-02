@@ -1,18 +1,20 @@
 import os
 
-from functools import partial
 from modules import common
-from modules.objects import object
 from modules.util.logger import logger
+from modules.plugins import plugin
 
 
-class CopyDirObject(object.Object):
-    def __init__(self, source, destination, ignore_regex):
-        super().__init__()
+class Dir(plugin.Plugin):
+    def __init__(self, config):
+        super().__init__(config)
 
-        self._ignore_regex = ignore_regex
-        self._source = source
-        self._destination = destination
+        self._ignore_regex = config.ignored_paths()
+        self._destination = os.path.expanduser(self.config.get('dst').astype(str))
+        self._source = os.path.expanduser(self.config.get('src').astype(str))
+
+    def build(self):
+        pass
 
     def difference(self):
         self._diff_abspaths = []
@@ -40,7 +42,7 @@ class CopyDirObject(object.Object):
                 self._destination, self._source, to_remove, self._ignore_regex,
             )
 
-        return _difference + _paths_to_remove
+        return [(Dir.__name__, _difference + _paths_to_remove)]
 
     def backup(self):
         backup_dir = self._destination + '.backup'
@@ -63,3 +65,6 @@ class CopyDirObject(object.Object):
 
             for destination in self._paths_to_remove:
                 common.try_remove(destination)
+
+
+plugin.registry().register(Dir)

@@ -1,10 +1,8 @@
-import os
 import yaml
 
 from modules.util import env
 from modules.context import context
-from modules.plugins import plugin
-from modules.objects import fileobject
+from modules.plugins import plugin, file
 
 
 def _create_prompt(prompt_style, local=None):
@@ -95,27 +93,12 @@ def _create_shellrc(config):
     return out
 
 
-class Shellrc(plugin.Plugin):
+class Shellrc(file.File):
     def __init__(self, config):
-        super().__init__(config)
-
-        self._config = config
-        self._object = fileobject.FileObject(
-            destination=os.path.expanduser(config.get('dst').astype(str)),
-            lines_lazy_source=lambda: _create_shellrc(self._config),
+        super().__init__(
+            config=config,
+            custom_line_source=lambda: _create_shellrc(self.config)
         )
-
-    def build(self):
-        self._object.build()
-
-    def difference(self):
-        return [(Shellrc.__name__, self._object.difference())]
-
-    def backup(self):
-        return [(Shellrc.__name__, self._object.backup())]
-
-    def apply(self):
-        return [(Shellrc.__name__, self._object.apply())]
 
 
 plugin.registry().register(Shellrc)

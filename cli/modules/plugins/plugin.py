@@ -1,4 +1,5 @@
 import abc
+import collections
 
 from modules.util.logger import logger
 
@@ -137,12 +138,14 @@ class _PluginsContainer(Plugin):
         super().__init__(config)
         self._plugins = plugins_list
 
-    def build(self):
-        for item in self._plugins:
-            item.build()
-
     def get_plugins_list(self):
         return self._plugins
+
+    def build(self):
+        return [
+            (plugin_name, plugin_instance.build())
+            for plugin_name, plugin_instance in self._plugins
+        ]
 
     def difference(self):
         return [
