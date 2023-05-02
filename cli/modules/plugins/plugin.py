@@ -113,7 +113,7 @@ class Plugin(abc.ABC):
                     continue
 
                 if isinstance(diff[0], str):
-                    logger().log_diff(''.join(diff).replace('%', '%%'))
+                    logger().diff(''.join(diff).replace('%', '%%'))
                 else:
                     Plugin.log_difference(diff)
 

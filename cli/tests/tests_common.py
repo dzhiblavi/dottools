@@ -25,7 +25,7 @@ class _SilentLogger:
     def error(self, fmt, *args):
         pass
 
-    def log_diff(self, fmt, *args):
+    def diff(self, fmt, *args):
         pass
 
     def action(self, fmt, *args):
