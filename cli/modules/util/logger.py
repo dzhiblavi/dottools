@@ -115,7 +115,7 @@ class Logger(abc.ABC):
         indent = '-' * self._indent
         labels = self._clr('/', 'white').join(
             self._clr(label, self._LABEL_COLORS[index])
-            for index, label in enumerate(self._labels if self._labels else ['root'])
+            for index, label in enumerate(self._labels)
         )
         return f'{indent}[{labels}] '
 
