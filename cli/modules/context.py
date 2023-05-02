@@ -1,36 +1,13 @@
 import os
+from typing import Any, Dict, Optional
 
 from modules.util import colors
 from modules.util import logger
 from modules.util import tools
 
 
-_global_context = None
-
-
-def override_context(context_instance):
-    global _global_context
-    _global_context = context_instance
-
-
-def init_context(context_instance):
-    global _global_context
-    assert _global_context is None, \
-           'Context has already been initialized'
-
-    override_context(context_instance)
-
-
-def context():
-    global _global_context
-    assert _global_context is not None, \
-           'Context has not been initialized'
-
-    return _global_context
-
-
-class Context:
-    def __init__(self, config_path, dot_root, dry_run):
+class Context:  # pylint: disable=too-many-instance-attributes
+    def __init__(self, config_path: str, dot_root: str, dry_run: bool) -> None:
         self.dry_run = dry_run
         self.cfg_path = config_path
         self.cfg_dir = os.path.dirname(os.path.dirname(config_path))
@@ -50,46 +27,32 @@ class Context:
         else:
             self.dot_generated = os.path.join(dot_root, 'dots', 'generated_dry-run')
 
-    def _join(self, head, path):
+    def _join(self, head: str, path: str) -> str:
         result = os.path.join(head, path)
         assert os.path.exists(result), f'Path {result} does not exist'
         return os.path.abspath(result)
 
-    def rel(self, path):
+    def rel(self, path: str) -> str:
         return self._join(self.cfg_dir, path)
 
-    def lib(self, path):
+    def lib(self, path: str) -> str:
         return self._join(self.dot_lib, path)
 
-    def common(self, path):
+    def common(self, path: str) -> str:
         return self._join(self.dot_common, path)
 
-    def bin(self, path):
+    def bin(self, path: str) -> str:
         return self._join(self.dot_bin, path)
 
-    def load(self, path):
+    def load(self, path: str) -> Any:
         return tools.load_yaml_by_path(self.rel(path))
 
-    def disable_dry_run(self):
-        class _Disable:
-            def __init__(self, ctx):
-                self._ctx = ctx
-
-            def __enter__(self):
-                self._old = self._ctx.dry_run
-                self._ctx.dry_run = False
-
-            def __exit__(self, exc_type, exc_val, exc_tb):
-                self._ctx.dry_run = self._old
-
-        return _Disable(self)
-
-    def apply(self, value, local=None):
+    def apply(self, value: str, local: Optional[Dict[str, Any]] = None) -> str:
         if not local:
             local = {}
 
         try:
-            return eval(
+            return eval(  # pylint: disable=eval-used
                 value, {},
                 {
                     'ctx': self,
@@ -98,7 +61,7 @@ class Context:
                     **local,
                 },
             )
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except
             logger.logger().warning(
                 [
                     'Failed to apply context, falling back to value',
@@ -109,7 +72,7 @@ class Context:
             )
             return value
 
-    def evaluate(self, obj):
+    def evaluate(self, obj: Any):
         if isinstance(obj, str):
             value = self.apply(obj)
             if value == obj:
@@ -130,3 +93,27 @@ class Context:
             }
 
         return obj
+
+
+_GLOBAL_CONTEXT = None
+
+
+def override_context(context_instance: Context) -> None:
+    global _GLOBAL_CONTEXT  # pylint: disable=global-variable-not-assigned,global-statement
+    _GLOBAL_CONTEXT = context_instance
+
+
+def init_context(context_instance: Context) -> None:
+    global _GLOBAL_CONTEXT  # pylint: disable=global-variable-not-assigned,global-statement
+    assert _GLOBAL_CONTEXT is None, \
+           'Context has already been initialized'
+
+    override_context(context_instance)
+
+
+def context() -> Context:
+    global _GLOBAL_CONTEXT  # pylint: disable=global-variable-not-assigned,global-statement
+    assert _GLOBAL_CONTEXT is not None, \
+           'Context has not been initialized'
+
+    return _GLOBAL_CONTEXT

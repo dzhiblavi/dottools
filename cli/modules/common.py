@@ -1,12 +1,14 @@
 import os
+import re
 import shutil
+from typing import List, Callable
 
 from modules.context import context
 from modules.util import diff
 from modules.util.logger import logger
 
 
-def _create_parent_dir_if_not_exists(file_path):
+def _create_parent_dir_if_not_exists(file_path: str) -> None:
     dir_name = os.path.dirname(file_path)
 
     if os.path.isdir(dir_name):
@@ -25,7 +27,7 @@ def _create_parent_dir_if_not_exists(file_path):
         os.makedirs(dir_name, exist_ok=True)
 
 
-def try_remove(file):
+def try_remove(file: str) -> None:
     logger().action(
         [
             'trying to remove path',
@@ -43,7 +45,7 @@ def try_remove(file):
             os.unlink(file)
 
 
-def read_lines_or_empty(file):
+def read_lines_or_empty(file: str) -> List[str]:
     file = os.path.expanduser(file)
 
     if not os.path.exists(file):
@@ -60,7 +62,7 @@ def read_lines_or_empty(file):
         return list(file_obj.readlines())
 
 
-def write_lines(lines, path):
+def write_lines(lines: List[str], path: str) -> None:
     _create_parent_dir_if_not_exists(path)
 
     logger().action(
@@ -76,7 +78,7 @@ def write_lines(lines, path):
             file.writelines(lines)
 
 
-def copy_file(src, dst):
+def copy_file(src: str, dst: str) -> None:
     _create_parent_dir_if_not_exists(dst)
 
     logger().action(
@@ -91,10 +93,8 @@ def copy_file(src, dst):
     if not context().dry_run:
         shutil.copy(src, dst)
 
-    return True
 
-
-def files_difference(src, dst):
+def files_difference(src: str, dst: str) -> List[str]:
     return diff.get_diff_lines(
         read_lines_or_empty(dst),
         read_lines_or_empty(src),
@@ -102,9 +102,9 @@ def files_difference(src, dst):
 
 
 def recurse_directories(
-    src, dst,
-    function,
-    ignore_regex,
+    src: str, dst: str,
+    function: Callable[[str, str], None],
+    ignore_regex: List[re.Pattern],
 ):
     src = os.path.abspath(src)
     dst = os.path.abspath(dst)

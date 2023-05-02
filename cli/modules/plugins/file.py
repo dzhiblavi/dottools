@@ -10,6 +10,9 @@ class File(plugin.Plugin):
     def __init__(self, config, custom_line_source=None):
         super().__init__(config)
         self._destination = os.path.expanduser(self.config.get('dst').astype(str))
+        self._current_lines = None
+        self._lines = None
+
         source = self.config.get('src')
 
         if custom_line_source is not None:
@@ -21,8 +24,8 @@ class File(plugin.Plugin):
             self._lines_source = lambda: common.read_lines_or_empty(source_path)
 
         elif source.istype(dict):
-            self._plugin = plugin.registry().create(source)
-            self._lines_source = lambda: self._plugin.build()[0][1][0][1]
+            self._plugin = plugin.registry().create_plugin(source)
+            self._lines_source = self._plugin.build
 
         else:
             assert False, f'Failed to create File plugin from {config}'
@@ -37,7 +40,7 @@ class File(plugin.Plugin):
         ]
 
     def backup(self):
-        with logger().indent('backup'):
+        with logger().indent('perform_backup'):
             backup_path = self._destination + '.backup'
 
             if os.path.isfile(self._destination):
@@ -52,7 +55,7 @@ class File(plugin.Plugin):
                 )
 
     def apply(self):
-        with logger().indent('action'):
+        with logger().indent('perform_apply'):
             return common.write_lines(self._lines, self._destination)
 
 

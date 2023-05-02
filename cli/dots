@@ -52,10 +52,11 @@ def _parse_args():
     )
 
     subparsers = parser.add_subparsers(title='Commands', dest='command')
+    subparsers.add_parser('config', help='Print compiled configuration')
     subparsers.add_parser('diff', help='Show difference')
     subparsers.add_parser('plan', help='Print actions that will be done when apply is used')
     subparsers.add_parser('apply', help='Apply configuration')
-    compile_parser = subparsers.add_parser('compile', help='Show preprocessed configuration')
+    compile_parser = subparsers.add_parser('compile', help='Show available plugins\' configuration')
     compile_parser.add_argument(
         '--full',
         help='Print extended config value',
@@ -66,15 +67,15 @@ def _parse_args():
 
 
 def _apply_command(args, plugin_instance, command):
-    with logger.logger().indent(label=command):
+    with logger.logger().indent(label=f'{type(plugin_instance).__name__}.{command}'):
         if command == 'compile':
             if args.full:
                 logger.logger().output(
-                    [''] + tools.safe_dump_yaml_lines(plugin_instance.config)
+                    [''] + tools.safe_dump_yaml_lines(plugin_instance.to_dict())
                 )
             else:
                 logger.logger().output(
-                    [''] + tools.safe_dump_yaml_lines(plugin_instance.config.to_dict())
+                    [''] + tools.safe_dump_yaml_lines(plugin_instance.to_dict())
                 )
             return
 
@@ -108,10 +109,7 @@ def main(args):
     config_path = os.path.realpath(args.config_file)
 
     logger.init_logger(
-        logger.StdErrLogger(
-            log_level=args.log_level,
-            use_colors=args.color == 'yes',
-        ),
+        logger.StdErrLogger(args.log_level, args.color == 'yes'),
     )
 
     context.init_context(
@@ -124,12 +122,13 @@ def main(args):
 
     cfg = config.create(tools.load_yaml_by_path(config_path))
 
-    logger.logger().info(
-        ['Preprocessed configuration'] + tools.safe_dump_yaml_lines(cfg.to_dict())
-    )
+    if args.command in {'config'}:
+        logger.logger().output([''] + tools.safe_dump_yaml_lines(cfg.to_dict()))
+        return
 
     matcher = re.compile(args.field)
-    all_plugins = plugin.registry().create(cfg).get_all_plugins_list()
+    plugins_object = plugin.registry().create_all_plugins(cfg)
+    all_plugins = tools.find_instances_of_subclasses(plugins_object, base_class=plugin.Plugin)
 
     for name, plug in all_plugins:
         if not matcher.search(name):

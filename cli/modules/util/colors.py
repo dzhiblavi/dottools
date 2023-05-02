@@ -26,26 +26,26 @@ _FONTMAP = {
 }
 
 
-def _color_fg(name):
+def _color_fg(name: str) -> int:
     return _COLORMAP.get(name, -1)
 
 
-def _color_bg(name):
+def _color_bg(name: str) -> int:
     return _COLORMAP.get(name, -1) + 10
 
 
-def _get_font(name):
+def _get_font(name: str) -> int:
     return _FONTMAP.get(name, -1)
 
 
-def fmt_line(line, fg=None, bg=None, font=None):
+def fmt_line(line: str, fg=None, bg=None, font=None):
     if line[-1] != '\n':
         return fmt(line, fg, bg, font)
 
     return fmt(line[:-1], fg, bg, font) + '\n'
 
 
-def fmt(text, fg=None, bg=None, font=None):
+def fmt(text: str, fg=None, bg=None, font=None):
     result = '{esc}[0;{fg}m'
 
     if fg is not None:

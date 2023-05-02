@@ -12,15 +12,11 @@ class Dir(plugin.Plugin):
         self._ignore_regex = config.ignored_paths()
         self._destination = os.path.expanduser(self.config.get('dst').astype(str))
         self._source = os.path.expanduser(self.config.get('src').astype(str))
-
-    def build(self):
-        pass
+        self._diff_abspaths = []
+        self._paths_to_remove = []
 
     def difference(self):
-        self._diff_abspaths = []
         _difference = []
-
-        self._paths_to_remove = []
         _paths_to_remove = []
 
         def diff_file(source_path, destination_path):
@@ -49,7 +45,7 @@ class Dir(plugin.Plugin):
         destination_to_backup = \
             self._paths_to_remove + [destination for _, destination in self._diff_abspaths]
 
-        with logger().indent('backup'):
+        with logger().indent('perform_backup'):
             for destination in destination_to_backup:
                 if not os.path.exists(destination):
                     continue
@@ -59,7 +55,7 @@ class Dir(plugin.Plugin):
                 common.copy_file(destination, backup_destination)
 
     def apply(self):
-        with logger().indent('apply'):
+        with logger().indent('perform_apply'):
             for source, destination in self._diff_abspaths:
                 common.copy_file(source, destination)
 

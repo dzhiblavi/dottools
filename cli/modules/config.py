@@ -1,6 +1,7 @@
 import re
-
+from typing import Any, Dict, List, Optional, Self, TypeVar, Callable
 from functools import reduce
+
 from modules.context import context
 from modules.util import merge
 
@@ -8,7 +9,7 @@ from modules.util import merge
 FROM_DICT_KEY = 'from'
 
 
-def _apply_meta_to_raw_objects(obj, list_key=False):
+def _apply_meta_to_raw_objects(obj: Any, list_key: bool = False) -> Any:
     """
     This function converts all plain lists to object {'list': the-list}
     So that both list representations will be allowed and treated similarly.
@@ -50,7 +51,7 @@ def _apply_meta_to_raw_objects(obj, list_key=False):
     return obj
 
 
-def _get_objects_to_merge_to_and_remove_from_key(obj, opts):
+def _get_objects_to_merge_to_and_remove_from_key(obj: Any, opts: Dict[str, str]) -> List[Any]:
     from_objs = obj[FROM_DICT_KEY]
     del obj[FROM_DICT_KEY]
 
@@ -68,7 +69,7 @@ def _get_objects_to_merge_to_and_remove_from_key(obj, opts):
     )
 
 
-def _apply_merging_impl(obj, opts):
+def _apply_merging_impl(obj: Any, opts: Dict[str, str]) -> Any:
     if FROM_DICT_KEY not in obj:
         return obj
 
@@ -82,7 +83,7 @@ def _apply_merging_impl(obj, opts):
     return merge.merge(merged_from_objects, obj, opts)
 
 
-def _apply_merging(obj, opts):
+def _apply_merging(obj: Any, opts: Dict[str, str]) -> Any:
     if isinstance(obj, dict):
         # Get merge options from obj and merge them into
         # parent's merge options opts
@@ -107,84 +108,29 @@ def _apply_merging(obj, opts):
     return obj
 
 
-def _create_config(obj, parent=None):
-    if isinstance(obj, dict):
-        config = _Config(parent=parent)
-        config.set_obj(
-            {
-                key: _create_config(value, parent=config)
-                for key, value in obj.items()
-            }
-        )
-        return config
-
-    if isinstance(obj, list):
-        config = _Config(parent=parent)
-        config.set_obj([_create_config(item, parent) for item in obj])
-        return config
-
-    return _Config(obj, parent)
+T = TypeVar('T')
 
 
-def _evaluate(config):
-    if config.istype(str):
-        config.set_obj(
-            context().apply(
-                value=config.astype(str),
-                local={'self': config},
-            )
-        )
-
-    if config.istype(list):
-        values = config.astype(list)
-        for item in values:
-            item = _evaluate(item)
-
-    if config.istype(dict):
-        values = config.astype(dict)
-        for key, value in values.items():
-            values[key] = _evaluate(value)
-
-    return config
-
-
-def create(obj):
-    default_merge_opts = {
-        'value': 'overwrite',
-        'list': 'append',
-        'dict': 'union_recursive',
-    }
-
-    obj = context().evaluate(obj)
-    obj = _apply_meta_to_raw_objects(obj)
-    obj = _apply_merging(obj, default_merge_opts)
-
-    config = _create_config(obj)
-    config = _evaluate(config)
-
-    return config
-
-
-class _Config:
+class Config:
     MERGE_OPTS_KEY = 'merge-opts'
     IGNORED_PATHS_KEY = 'ignored-paths'
     IGNORED_PATHS_RE_KEY = '__config_ignored-paths-re-cache'
 
-    def __init__(self, obj=None, parent=None):
+    def __init__(self, obj: Any = None, parent: Optional[Self] = None) -> None:
         self._obj = obj
         self._parent = parent
 
-    def set_obj(self, obj):
+    def set_obj(self, obj: Any) -> None:
         self._obj = obj
 
-    def set_parent(self, parent):
+    def set_parent(self, parent: Self) -> None:
         self._parent = parent
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:
         assert isinstance(self._obj, dict)
         return key in self._obj
 
-    def __getstate__(self):
+    def __getstate__(self) -> Any:
         if not isinstance(self._obj, dict):
             return self._obj
 
@@ -192,10 +138,10 @@ class _Config:
         state[self.IGNORED_PATHS_RE_KEY] = self.ignored_paths()
         return state
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self._obj)
 
-    def istype(self, clazz):
+    def istype(self, clazz: type) -> bool:
         if clazz == list:
             if isinstance(self._obj, list):
                 return True
@@ -208,7 +154,7 @@ class _Config:
 
         return isinstance(self._obj, clazz)
 
-    def astype(self, clazz):
+    def astype(self, clazz: type):
         obj = self._obj
 
         if clazz == dict and isinstance(obj, dict):
@@ -230,19 +176,20 @@ class _Config:
         assert False, \
                f'Type mismatch: expected {clazz}, found {type(obj)}'
 
-    def _as_default(self, default):
+    def _as_default(self, default: Any):
         if default is not None:
-            return _Config(obj=default, parent=self)
+            return Config(obj=default, parent=self)
 
         return default
 
-    def getp(self, key, default=None):
+    def getp(self, key: str, default: Any = None) -> Any:
         """
         Gets the key using the dotted notation
         Searches key in this object plus all of its parents
         """
 
-        obj = self
+        obj: Optional[Config] = self
+
         while obj is not None:
             value = obj.get(key)
 
@@ -253,15 +200,15 @@ class _Config:
 
         return self._as_default(default)
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Any = None):
         """
         Gets the value by key from this config or the default one
         uses the dot notation, i.e. a.b.c
         """
 
         parts = key.split('.')
-
         obj = self
+
         for part in parts:
             if not isinstance(obj._obj, dict) or part not in obj._obj:
                 return self._as_default(default)
@@ -270,7 +217,7 @@ class _Config:
 
         return obj
 
-    def to_dict(self):
+    def to_dict(self) -> dict | list:
         if isinstance(self._obj, dict):
             return {
                 key: value.to_dict()
@@ -283,19 +230,19 @@ class _Config:
 
         return self._obj
 
-    def is_config_key(self, key):
+    def is_config_key(self, key: str) -> bool:
         return self._is_internal_key(key) or key in {
             FROM_DICT_KEY,
             self.MERGE_OPTS_KEY,
             self.IGNORED_PATHS_KEY,
         }
 
-    def _is_internal_key(self, key):
+    def _is_internal_key(self, key: str) -> bool:
         return key in {
             self.IGNORED_PATHS_RE_KEY,
         }
 
-    def ignored_paths(self):
+    def ignored_paths(self) -> List[re.Pattern]:
         if isinstance(self._obj, dict):
             if self.IGNORED_PATHS_RE_KEY not in self._obj:
                 self._obj[self.IGNORED_PATHS_RE_KEY] = self._build_ignored_path()
@@ -304,13 +251,13 @@ class _Config:
 
         return self._find_ignored_paths_in_parents()
 
-    def _find_ignored_paths_in_parents(self):
+    def _find_ignored_paths_in_parents(self) -> List[re.Pattern]:
         if not self._parent:
             return []
 
         return self._parent.ignored_paths()
 
-    def _build_ignored_path(self):
+    def _build_ignored_path(self) -> List[re.Pattern]:
         ignored_paths = self._find_ignored_paths_in_parents()
 
         if isinstance(self._obj, dict) and self.IGNORED_PATHS_KEY in self._obj:
@@ -322,3 +269,61 @@ class _Config:
             )
 
         return ignored_paths
+
+
+def _create_config(obj: Any, parent: Optional[Config] = None) -> Config:
+    if isinstance(obj, dict):
+        config = Config(parent=parent)
+        config.set_obj(
+            {
+                key: _create_config(value, parent=config)
+                for key, value in obj.items()
+            }
+        )
+        return config
+
+    if isinstance(obj, list):
+        config = Config(parent=parent)
+        config.set_obj([_create_config(item, parent) for item in obj])
+        return config
+
+    return Config(obj, parent)
+
+
+def _evaluate(config: Config) -> Config:
+    if config.istype(str):
+        config.set_obj(
+            context().apply(
+                value=config.astype(str),
+                local={'self': config},
+            )
+        )
+
+    if config.istype(list):
+        values = config.astype(list)
+        for item in values:
+            item = _evaluate(item)
+
+    if config.istype(dict):
+        values = config.astype(dict)
+        for key, value in values.items():
+            values[key] = _evaluate(value)
+
+    return config
+
+
+def create(obj: Any) -> Config:
+    default_merge_opts = {
+        'value': 'overwrite',
+        'list': 'append',
+        'dict': 'union_recursive',
+    }
+
+    obj = context().evaluate(obj)
+    obj = _apply_meta_to_raw_objects(obj)
+    obj = _apply_merging(obj, default_merge_opts)
+
+    config = _create_config(obj)
+    config = _evaluate(config)
+
+    return config

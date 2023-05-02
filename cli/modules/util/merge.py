@@ -4,6 +4,9 @@ import yaml
 from modules.util import logger, tools
 
 
+_LOGGING_ENABLE = False
+
+
 class UnmergeableValues(Exception):
     """
     Raised when values cannot be merged
@@ -77,6 +80,9 @@ def _get_value_merge_options(opts):
 
 
 def _log_merge_start(opts, base, extend):
+    if not _LOGGING_ENABLE:
+        return
+
     logger.logger().info(
         [
             'Merging:',
@@ -90,6 +96,9 @@ def _log_merge_start(opts, base, extend):
 
 
 def _log_merge_result(result):
+    if not _LOGGING_ENABLE:
+        return
+
     logger.logger().info(
         [
             '> result:',

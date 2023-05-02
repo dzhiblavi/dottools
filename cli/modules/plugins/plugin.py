@@ -1,112 +1,51 @@
 import abc
-import collections
 
+from typing import Type, Dict, Tuple, List
+from modules.config import Config
+from modules.util import tools
 from modules.util.logger import logger
 
 
-class _PluginRegistry:
-    def __init__(self):
-        self._name_to_clazz = {}
-
-    def register(self, clazz):
-        name = clazz.__name__
-
-        assert name not in self._name_to_clazz, \
-               f'Plugin with name {name} is already registered as {clazz}'
-
-        assert name[0].isupper(), \
-               f'Plugin name should start with uppercase letter: {name}'
-
-        self._name_to_clazz[name] = clazz
-
-    def create(self, config, name=None):
-        logger().info(
-            [
-                'Resolving plugin...',
-                'plugin_name\t= %s',
-                'config\t= %s',
-            ],
-            name, config.to_dict(),
-        )
-
-        if name and name in self._name_to_clazz:
-            clazz = self._name_to_clazz[name]
-            logger().info('Plugin with name %s is registered as %s', name, clazz)
-            return clazz(config)
-
-        if config.istype(list):
-            logger().info('Object considered to be a list of plugins')
-            return ListOfPlugins(config)
-
-        if config.istype(dict):
-            logger().info('Object considered to be a dict of plugins')
-            return DictOfPlugins(config)
-
-        assert False, f'Failed to create plugin: name={name}, config={config}'
-
-
-_global_plugin_registry = _PluginRegistry()
-
-
-def registry():
-    global _global_plugin_registry
-    return _global_plugin_registry
-
-
 class Plugin(abc.ABC):
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         self.config = config
 
+    def to_dict(self):
+        """
+        Returns object-like representation of the plugin
+        instance (for debugging and informational purposes)
+        """
+
+        return {
+            'type': type(self).__name__,
+            'config': self.config.to_dict(),
+        }
+
     def build(self):
-        pass
-
-    def _get_all_plugins_impl(self, name_prefix):
-        plugins_list = self.get_plugins_list()
-
-        if plugins_list is None:
-            return [(name_prefix, self)]
-
-        concat = []
-        for name, plug in plugins_list:
-            concat.extend(plug._get_all_plugins_impl(f'{name_prefix}.{name}'))
-
-        return concat
-
-    def get_all_plugins_list(self):
-        return self._get_all_plugins_impl('')
-
-    def get_plugins_list(self):
         """
-        Returns the list of immediate child plugins or None in case it is not a container of plugins
+        Should return an object associated with the result
+        ob building this plugin instance (maybe None)
         """
-        return None
 
-    @abc.abstractmethod
-    def difference(self):
+    def difference(self) -> List[Tuple[str, List[str]]]:
         """
         Should return a list of strings representing difference
         of the self.config and the current state, i.e.
-
-            D: [(str, D), ...]
         """
-        pass
+        return []
 
-    @abc.abstractmethod
-    def backup(self):
+    def backup(self) -> None:
         """
-        Should perform backup
+        Should perform backup if needed
         """
-        pass
 
-    @abc.abstractmethod
-    def apply(self):
+    def apply(self) -> None:
         """
         Applies configuration stored in self.config
         """
-        pass
 
     @staticmethod
-    def log_difference(difference):
+    def log_difference(difference: List[Tuple[str, List[str]]]) -> None:
         for tag, diff in difference:
             with logger().indent(label=f'diff({tag})'):
                 if not diff:
@@ -119,107 +58,132 @@ class Plugin(abc.ABC):
                     Plugin.log_difference(diff)
 
     @staticmethod
-    def any_difference(difference):
-        for tag, diff in difference:
+    def any_difference(difference: List[Tuple[str, List[str]]]) -> bool:
+        for _, diff in difference:
             if not diff:
                 continue
 
             if isinstance(diff[0], str):
                 return True
-            else:
-                if Plugin.any_difference(diff):
-                    return True
+
+            if Plugin.any_difference(diff):
+                return True
 
         return False
 
 
-class _PluginsContainer(Plugin):
-    def __init__(self, config, plugins_list):
-        super().__init__(config)
-        self._plugins = plugins_list
+class _PluginRegistry:
+    def __init__(self) -> None:
+        self._name_to_clazz: Dict[str, Type[Plugin]] = {}
 
-    def get_plugins_list(self):
-        return self._plugins
+    def register(self, clazz: Type[Plugin]) -> None:
+        name: str = clazz.__name__
 
-    def build(self):
-        return [
-            (plugin_name, plugin_instance.build())
-            for plugin_name, plugin_instance in self._plugins
-        ]
+        assert name not in self._name_to_clazz, \
+               f'Plugin with name {name} is already registered as {clazz}'
 
-    def difference(self):
-        return [
-            (plugin_name, plugin_instance.difference())
-            for plugin_name, plugin_instance in self._plugins
-        ]
+        assert name[0].isupper(), \
+               f'Plugin name should start with uppercase letter: {name}'
 
-    def backup(self):
-        return [
-            (plugin_name, plugin_instance.backup())
-            for plugin_name, plugin_instance in self._plugins
-        ]
+        self._name_to_clazz[name] = clazz
 
-    def apply(self):
-        return [
-            (plugin_name, plugin_instance.apply())
-            for plugin_name, plugin_instance in self._plugins
-        ]
+    def _get_plugin_spec(self, config: Config) -> Tuple[str, Config]:
+        if not config.istype(dict):
+            return None, None
+
+        as_dict = config.astype(dict)
+        keys = as_dict.keys()
+
+        if len(keys) != 1:
+            return None, None
+
+        plugin_name = next(iter(keys))
+        plugin_config = as_dict[plugin_name]
+
+        if plugin_name == 'Plugin':
+            assert 'type' in plugin_config, \
+                   f'"type" field not found in Plugin: config {plugin_config}'
+
+            plugin_name = plugin_config.get('type').astype(str)
+            plugin_config = plugin_config.get('config', {})
+
+        if plugin_name not in self._name_to_clazz:
+            return None, None
+
+        return plugin_name, plugin_config
+
+    def create_plugin(self, config: Config) -> Plugin:
+        """
+        Creates a registered plugin from configuration like
+
+        PluginName:
+            # plugin config goes here
+            key: value
+            ...
+
+        or
+
+        Plugin:
+            type: PluginName
+            config:
+                # plugin config goes here
+                key: value
+                ...
+        """
+
+        plugin_name, plugin_config = self._get_plugin_spec(config)
+
+        logger().info(
+            [
+                'Creating plugin...',
+                'name=\t %s',
+                'config:',
+            ] + tools.safe_dump_yaml_lines(plugin_config.to_dict()),
+            plugin_name,
+        )
+
+        assert plugin_name in self._name_to_clazz, f'Plugin with name {plugin_name} not found'
+        return self._name_to_clazz[plugin_name](plugin_config)
+
+    def create_all_plugins(self, config: Config):
+        """
+        Given any yaml-like object creates all plugins that it can find in it
+        and returns dictionary with the same k/v except plugin specs are replaced
+        with plugin instances themselves, i.e.:
+
+        key:
+            - PluginName:
+                # plugin config
+                ...
+
+        transforms to
+
+        key:
+            - <instance of plugin PluginName>
+        """
+
+        name, _ = self._get_plugin_spec(config)
+        if name is not None:
+            return self.create_plugin(config)
+
+        if config.istype(dict):
+            return {
+                key: self.create_all_plugins(value)
+                for key, value in config.astype(dict).items()
+            }
+
+        if config.istype(list):
+            return [
+                self.create_all_plugins(item)
+                for item in config.astype(list)
+            ]
+
+        return config
 
 
-class ListOfPlugins(_PluginsContainer):
-    """
-    Container for a list of multiple plugins, i.e.:
-
-    plugins:
-      - plugin_a:
-          # plugin config goes here
-          key: value
-
-      - plugin_b:
-          key: value
-
-    Should be a list where each item is a plugin instance itself
-    """
-
-    def __init__(self, config):
-        plugins_list = []
-
-        for item_cfg in config.astype(list):
-            item = item_cfg.astype(dict)
-
-            assert len(item.keys()) == 1, \
-                   f'Illegal plugin specification: {item}'
-
-            plugin_name = next(iter(item.keys()))
-
-            plugins_list.append(
-                (plugin_name, registry().create(item[plugin_name], plugin_name)),
-            )
-
-        super().__init__(config, plugins_list)
+_global_plugin_registry = _PluginRegistry()
 
 
-class DictOfPlugins(_PluginsContainer):
-    """
-    Container for a dict of multiple plugins, i.e.:
-
-    plugins:
-      plugin_a:
-        # plugin config goes here
-        key: value
-
-      plugin_b:
-        key: value
-
-    Should be a dict where each item is a plugin_name: plugin_config itself
-    """
-
-    def __init__(self, config):
-        plugins_list = []
-
-        for plugin_name, plugin_config in config.astype(dict).items():
-            plugins_list.append(
-                (plugin_name, registry().create(plugin_config, plugin_name)),
-            )
-
-        super().__init__(config, plugins_list)
+def registry():
+    global _global_plugin_registry  # pylint: disable=global-variable-not-assigned
+    return _global_plugin_registry

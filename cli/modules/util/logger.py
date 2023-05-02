@@ -1,32 +1,9 @@
 import abc
 import sys
+from typing import List, Any, Optional
 
 from functools import partial
 from modules.util import colors
-
-
-_global_logger = None
-
-
-def override_logger(logger_instance):
-    global _global_logger
-    _global_logger = logger_instance
-
-
-def init_logger(logger_instance):
-    assert _global_logger is None, \
-           'Logger is already initialized'
-
-    override_logger(logger_instance)
-
-
-def logger():
-    global _global_logger
-
-    assert _global_logger is not None, \
-           'Logger has not been initialized yet'
-
-    return _global_logger
 
 
 LEVEL_NONE = 0
@@ -36,23 +13,10 @@ LEVEL_INFO = 4
 LEVEL_ALL = 5
 
 
-class _Silence:
-    def __init__(self, logger):
-        self._logger = logger
-        self._old_level = None
-
-    def __enter__(self):
-        self._old_level = self._logger._level
-        self._logger._level = 0
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._logger._level = self._old_level
-
-
 class _Indent:
-    def __init__(self, logger, num, label):
+    def __init__(self, logger_impl, num, label):
         self._num = num
-        self._logger = logger
+        self._logger = logger_impl
         self._label = label
 
     def __enter__(self):
@@ -93,25 +57,26 @@ class Logger(abc.ABC):
         'INFO': 'green',
         'WARN': 'yellow',
         'ERROR': 'red',
+        'OUT': 'light_green',
     }
 
-    def __init__(self, level, use_colors):
-        self._indent = 0
-        self._labels = []
-        self._level = level
-        self._use_colors = use_colors
+    def __init__(self, level: int, use_colors: bool) -> None:
+        self._indent: int = 0
+        self._labels: List[str] = []
+        self._level: int = level
+        self._use_colors: bool = use_colors
 
-    def _clr(self, text, *args, **kwargs):
+    def _clr(self, text: str, *args, **kwargs) -> str:
         if not self._use_colors:
             return text
 
         return colors.fmt(text, *args, **kwargs)
 
     @abc.abstractmethod
-    def _log_impl(self, head, fmt, *args):
+    def _log_impl(self, head: str, fmt: str, *args: List[Any]) -> None:
         pass
 
-    def _preamble(self):
+    def _preamble(self) -> str:
         indent = '-' * self._indent
         labels = self._clr('/', 'white').join(
             self._clr(label, self._LABEL_COLORS[index])
@@ -119,10 +84,10 @@ class Logger(abc.ABC):
         )
         return f'{indent}[{labels}] '
 
-    def _newline(self, preamble):
+    def _newline(self, preamble: str) -> str:
         return '\n     ' + preamble
 
-    def _fmt(self, preamble, fmt):
+    def _fmt(self, preamble: str, fmt: str | List[str]) -> str:
         if isinstance(fmt, str):
             return fmt
 
@@ -133,54 +98,71 @@ class Logger(abc.ABC):
             )
         )
 
-    def _build_log_args(self, preamble, fmt, *args):
+    def _build_log_args(self, preamble: str, fmt: str | List[str], *args: List[Any]) -> List[Any]:
         return [preamble + self._fmt('| ' + ' ' * self._indent, fmt), *args]
 
-    def output(self, fmt, *args):
-        self._log_impl('', *self._build_log_args(self._preamble(), fmt, *args))
-
-    def _log_with_tag(self, tag, fmt, *args):
+    def _log_with_tag(self, tag: str, fmt: str | List[str], *args: List[Any]) -> None:
         self._log_impl(
             self._clr(tag, self._COLOR_MAP[tag]) + ': ',
             *self._build_log_args(self._preamble(), fmt, *args),
         )
 
-    def info(self, fmt, *args):
+    def output(self, fmt: str | List[str], *args: List[Any]) -> None:
+        self._log_with_tag('OUT', fmt, *args)
+
+    def info(self, fmt: str | List[str], *args: List[Any]):
         if self._level < LEVEL_INFO:
             return
 
         self._log_with_tag('INFO',  fmt, *args)
 
-    def warning(self, fmt, *args):
+    def warning(self, fmt: str | List[str], *args: List[Any]):
         if self._level < LEVEL_WARNING:
             return
 
         self._log_with_tag('WARN', fmt, *args)
 
-    def error(self, fmt, *args):
+    def error(self, fmt: str | List[str], *args: List[Any]):
         if self._level < LEVEL_ERROR:
             return
 
         self._log_with_tag('ERROR', fmt, *args)
 
-    def diff(self, fmt, *args):
+    def diff(self, fmt: str | List[str], *args: List[Any]):
         self._log_with_tag('DIFF', fmt, *args)
 
-    def action(self, fmt, *args):
+    def action(self, fmt: str | List[str], *args: List[Any]):
         self._log_with_tag('ACTION', fmt, *args)
 
-    def indent(self, label=None, offset=4):
+    def indent(self, label: Optional[str] = None, offset: int = 4):
         return _Indent(self, offset, label)
-
-    def silence(self):
-        return _Silence(self)
 
 
 class StdErrLogger(Logger):
-    def __init__(self, log_level, use_colors):
-        super().__init__(log_level, use_colors)
-
-    def _log_impl(self, head, fmt, *args):
-        sys.stderr.write(head)
+    def _log_impl(self, head: str, fmt: str, *args: List[Any]) -> None:
+        if head:
+            sys.stderr.write(head)
         sys.stderr.write(fmt % args)
         sys.stderr.write('\n')
+
+
+_GLOBAL_LOGGER = None
+
+
+def override_logger(logger_instance: Logger) -> None:
+    global _GLOBAL_LOGGER  # pylint: disable=global-variable-not-assigned,global-statement
+    _GLOBAL_LOGGER = logger_instance
+
+
+def init_logger(logger_instance: Logger) -> None:
+    assert _GLOBAL_LOGGER is None, \
+           'Logger is already initialized'
+
+    override_logger(logger_instance)
+
+
+def logger() -> Logger:
+    global _GLOBAL_LOGGER  # pylint: disable=global-variable-not-assigned,global-statement
+    assert _GLOBAL_LOGGER is not None, \
+           'Logger has not been initialized yet'
+    return _GLOBAL_LOGGER

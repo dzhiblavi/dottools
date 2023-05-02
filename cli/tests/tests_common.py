@@ -11,7 +11,7 @@ class _NoopContext:
     def __enter__(self):
         pass
 
-    def __exit__(*args):
+    def __exit__(self, *args):
         pass
 
 
@@ -31,10 +31,7 @@ class _SilentLogger:
     def action(self, fmt, *args):
         pass
 
-    def indent(self, label=None, offset=4):
-        return _NoopContext()
-
-    def silence(self):
+    def indent(self, *args, **kwargs):  # pylint: disable=unused-argument
         return _NoopContext()
 
 
@@ -76,13 +73,13 @@ def assert_same_regex(actual, expected):
     Uses assert for test purposes
     """
 
-    assert type(actual) == type(expected), \
+    assert isinstance(actual, type(expected)), \
            f'Type mismatch: {type(actual)} != {type(expected)}'
 
     if actual is None:
         return
 
-    if type(actual) == list:
+    if isinstance(actual, list):
         assert len(actual) == len(expected), \
                f'Length mismatch: {len(actual)} != {len(expected)}'
 
@@ -91,7 +88,7 @@ def assert_same_regex(actual, expected):
 
         return
 
-    if type(actual) == dict:
+    if isinstance(actual, dict):
         assert actual.keys() == expected.keys(), \
                f'Dict keys mismatch: {expected.keys()} != {actual.keys()}'
 
@@ -100,7 +97,7 @@ def assert_same_regex(actual, expected):
 
         return
 
-    assert type(actual) == str, \
+    assert isinstance(actual, str), \
            f'Unexpected type: not dict, list or str: {type(actual)}'
 
     assert re.match(expected, actual), \
