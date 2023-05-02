@@ -39,7 +39,7 @@ ignored-paths:
   - ".*.sw*"
 
 # shellrc (.bashrc, .zshrc, ...) configuration
-shellrc:
+Shellrc:
   # destination of shellrc
   dst: ~/.bashrc
 
@@ -114,32 +114,22 @@ shellrc:
       - ctx.common('...')
 
 # dotfiles (files or directories that must be copied somewhere)
-dots:
-  # this should be a list that can have arbitrary number of items
+dotfiles:
+  list:
+    File:  # or Dir
+      # note that from can be used here
+      from: []
 
-  # the 'name' for dotfile spec
-  - alias: dot-ssh-dir
+      # note that ignored-paths can be used here
+      ignored-paths:
+        - .some.ignored.pattern
 
-    # whether this dot is disabled
-    disabled: false
-
-    # note that from can be used here
-    from: []
-
-    # note that ignored-paths can be used here
-    ignored-paths:
-      - .some.ignored.pattern
-
-    # note that merge-opts can be used here
-    merge-opts:
-      value: overwrite
-
-    actions:
-      # method to be used (only 'copy' available and is the default)
-      method: copy
+      # note that merge-opts can be used here
+      merge-opts:
+        value: overwrite
 
       # path to copy from (can be either file or directory)
-      src: /my-ssh-dir-location
+      src: /my-ssh-dir-location  # or Generate (see plugins/generate)
 
       # path to copy to (will be created if does not exist)
       dst: ~/.ssh
