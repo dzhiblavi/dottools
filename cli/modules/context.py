@@ -84,13 +84,13 @@ class Context:
 
         return _Disable(self)
 
-    def apply(self, s, local=None):
+    def apply(self, value, local=None):
         if not local:
             local = {}
 
         try:
             return eval(
-                s, {},
+                value, {},
                 {
                     'ctx': self,
                     'fmt': colors.fmt,
@@ -98,23 +98,24 @@ class Context:
                     **local,
                 },
             )
-        except SyntaxError as err:
+        except Exception as err:
             logger.logger().warning(
                 [
-                    'Failed to apply context:',
-                    'src\t= %s',
-                    'err\t= %s',
+                    'Failed to apply context, falling back to value',
+                    'value\t= %s',
+                    'error\t= %s',
                 ],
-                s, str(err),
+                value, str(err),
             )
-            raise
+            return value
 
     def evaluate(self, obj):
         if isinstance(obj, str):
-            try:
-                return self.evaluate(self.apply(obj))
-            except Exception:
-                return obj
+            value = self.apply(obj)
+            if value == obj:
+                return value
+
+            return self.evaluate(value)
 
         if isinstance(obj, list):
             return [

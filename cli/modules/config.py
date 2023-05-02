@@ -128,17 +128,12 @@ def _create_config(obj, parent=None):
 
 def _evaluate(config):
     if config.istype(str):
-        value = config.astype(str)
-
-        try:
-            config.set_obj(
-                context().apply(
-                    s=value,
-                    local={'self': config},
-                )
+        config.set_obj(
+            context().apply(
+                value=config.astype(str),
+                local={'self': config},
             )
-        except Exception:
-            pass
+        )
 
     if config.istype(list):
         values = config.astype(list)

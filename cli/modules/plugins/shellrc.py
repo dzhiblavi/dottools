@@ -9,10 +9,7 @@ def _create_prompt(prompt_style, local=None):
     prompt = ''
 
     for part in prompt_style:
-        try:
-            prompt += context().apply(str(part), local)
-        except Exception:
-            prompt += str(part)
+        prompt += context().apply(str(part), local)
 
     return prompt
 
