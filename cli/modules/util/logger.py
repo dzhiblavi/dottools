@@ -7,20 +7,41 @@ from functools import partial
 from modules.util import colors
 
 
-LEVEL_NONE = 0
-LEVEL_ERROR = 1
-LEVEL_WARNING = 2
-LEVEL_INFO = 3
-LEVEL_ALL = 4
-
-
 class Tags(enum.Enum):
+    ALL = 'white'
     OUTPUT = 'light_green'
     MERGE = 'cyan'
     ACTION = 'magenta'
+    DIFF = 'light_cyan'
     INFO = 'green'
     WARN = 'yellow'
     ERROR = 'red'
+
+
+TAGS_DEPENDENCIES = {
+    Tags.ALL: list(Tags),
+    Tags.INFO: [Tags.WARN],
+    Tags.WARN: [Tags.ERROR],
+}
+
+
+_LABELS_COLORS = [
+    'red',
+    'green',
+    'yellow',
+    'blue',
+    'magenta',
+    'cyan',
+    'light_gray',
+    'gray',
+    'light_red',
+    'light_green',
+    'light_yellow',
+    'light_blue',
+    'light_magenta',
+    'light_cyan',
+    'white',
+]
 
 
 class _Indent:
@@ -43,23 +64,6 @@ class _Indent:
 
 
 class Logger(abc.ABC):
-    _LABEL_COLORS = [
-        'red',
-        'green',
-        'yellow',
-        'blue',
-        'magenta',
-        'cyan',
-        'light_gray',
-        'gray',
-        'light_red',
-        'light_green',
-        'light_yellow',
-        'light_blue',
-        'light_magenta',
-        'light_cyan',
-        'white',
-    ]
 
     def __init__(self, enabled_tags=None, use_colors=True) -> None:
         self._indent: int = 0
@@ -80,7 +84,7 @@ class Logger(abc.ABC):
     def _preamble(self) -> str:
         indent = '-' * self._indent
         labels = self._clr('/', 'white').join(
-            self._clr(label, self._LABEL_COLORS[index])
+            self._clr(label, _LABELS_COLORS[index])
             for index, label in enumerate(self._labels)
         )
         return f'{indent}[{labels}] '
@@ -128,6 +132,7 @@ class StdErrLogger(Logger):
     def _log_impl(self, head: str, fmt: str, *args) -> None:
         if head:
             sys.stderr.write(head)
+
         sys.stderr.write(fmt % args)
         sys.stderr.write('\n')
 

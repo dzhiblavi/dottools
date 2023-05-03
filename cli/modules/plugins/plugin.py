@@ -54,7 +54,7 @@ class Plugin(abc.ABC):
 
                 if isinstance(diff[0], str):
                     logger().log(
-                        Tags.OUTPUT,
+                        Tags.DIFF,
                         ''.join(diff).replace('%', '%%'),
                     )
                 else:
