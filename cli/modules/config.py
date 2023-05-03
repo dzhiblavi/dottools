@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict, List, Optional, Self, TypeVar, Callable
+from typing import Any, Dict, List, Optional, TypeVar, Callable
 from functools import reduce
 
 from modules.context import context
@@ -116,14 +116,14 @@ class Config:
     IGNORED_PATHS_KEY = 'ignored-paths'
     IGNORED_PATHS_RE_KEY = '__config_ignored-paths-re-cache'
 
-    def __init__(self, obj: Any = None, parent: Optional[Self] = None) -> None:
+    def __init__(self, obj: Any = None, parent=None) -> None:
         self._obj = obj
         self._parent = parent
 
     def set_obj(self, obj: Any) -> None:
         self._obj = obj
 
-    def set_parent(self, parent: Self) -> None:
+    def set_parent(self, parent) -> None:
         self._parent = parent
 
     def __contains__(self, key: str) -> bool:
@@ -217,7 +217,7 @@ class Config:
 
         return obj
 
-    def to_dict(self) -> dict | list:
+    def to_dict(self):
         if isinstance(self._obj, dict):
             return {
                 key: value.to_dict()
