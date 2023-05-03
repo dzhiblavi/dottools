@@ -242,7 +242,7 @@ class Config:
             self.IGNORED_PATHS_RE_KEY,
         }
 
-    def ignored_paths(self) -> List[re.Pattern]:
+    def ignored_paths(self) -> List[Any]:
         if isinstance(self._obj, dict):
             if self.IGNORED_PATHS_RE_KEY not in self._obj:
                 self._obj[self.IGNORED_PATHS_RE_KEY] = self._build_ignored_path()
@@ -251,13 +251,13 @@ class Config:
 
         return self._find_ignored_paths_in_parents()
 
-    def _find_ignored_paths_in_parents(self) -> List[re.Pattern]:
+    def _find_ignored_paths_in_parents(self) -> List[Any]:
         if not self._parent:
             return []
 
         return self._parent.ignored_paths()
 
-    def _build_ignored_path(self) -> List[re.Pattern]:
+    def _build_ignored_path(self) -> List[Any]:
         ignored_paths = self._find_ignored_paths_in_parents()
 
         if isinstance(self._obj, dict) and self.IGNORED_PATHS_KEY in self._obj:

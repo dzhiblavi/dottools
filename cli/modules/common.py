@@ -1,7 +1,6 @@
 import os
-import re
 import shutil
-from typing import List, Callable
+from typing import List, Callable, Any
 
 from modules.context import context
 from modules.util import diff
@@ -104,7 +103,7 @@ def files_difference(src: str, dst: str) -> List[str]:
 def recurse_directories(
     src: str, dst: str,
     function: Callable[[str, str], None],
-    ignore_regex: List[re.Pattern],
+    ignore_regex: List[Any],
 ):
     src = os.path.abspath(src)
     dst = os.path.abspath(dst)
