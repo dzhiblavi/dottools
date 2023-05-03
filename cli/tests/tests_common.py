@@ -19,6 +19,9 @@ class _SilentLogger:
     def info(self, fmt, *args):
         pass
 
+    def log(self, tag, fmt, *args):
+        pass
+
     def warning(self, fmt, *args):
         pass
 
@@ -26,9 +29,6 @@ class _SilentLogger:
         pass
 
     def diff(self, fmt, *args):
-        pass
-
-    def action(self, fmt, *args):
         pass
 
     def indent(self, *args, **kwargs):  # pylint: disable=unused-argument

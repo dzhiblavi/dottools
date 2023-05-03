@@ -3,7 +3,7 @@ import abc
 from typing import Type, Dict, Tuple, List
 from modules.config import Config
 from modules.util import tools
-from modules.util.logger import logger
+from modules.util.logger import logger, Tags
 
 
 class Plugin(abc.ABC):
@@ -53,7 +53,10 @@ class Plugin(abc.ABC):
                     continue
 
                 if isinstance(diff[0], str):
-                    logger().diff(''.join(diff).replace('%', '%%'))
+                    logger().log(
+                        Tags.OUTPUT,
+                        ''.join(diff).replace('%', '%%'),
+                    )
                 else:
                     Plugin.log_difference(diff)
 

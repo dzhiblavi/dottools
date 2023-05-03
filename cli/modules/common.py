@@ -4,7 +4,7 @@ from typing import List, Callable, Any
 
 from modules.context import context
 from modules.util import diff
-from modules.util.logger import logger
+from modules.util.logger import logger, Tags
 
 
 def _create_parent_dir_if_not_exists(file_path: str) -> None:
@@ -13,7 +13,8 @@ def _create_parent_dir_if_not_exists(file_path: str) -> None:
     if os.path.isdir(dir_name):
         return
 
-    logger().action(
+    logger().log(
+        Tags.ACTION,
         [
             'creating parent directory',
             'path\t= %s',
@@ -27,7 +28,8 @@ def _create_parent_dir_if_not_exists(file_path: str) -> None:
 
 
 def try_remove(file: str) -> None:
-    logger().action(
+    logger().log(
+        Tags.ACTION,
         [
             'trying to remove path',
             'path\t= %s',
@@ -64,7 +66,8 @@ def read_lines_or_empty(file: str) -> List[str]:
 def write_lines(lines: List[str], path: str) -> None:
     _create_parent_dir_if_not_exists(path)
 
-    logger().action(
+    logger().log(
+        Tags.ACTION,
         [
             'writing content to file',
             'path\t= %s',
@@ -80,7 +83,7 @@ def write_lines(lines: List[str], path: str) -> None:
 def copy_file(src: str, dst: str) -> None:
     _create_parent_dir_if_not_exists(dst)
 
-    logger().action(
+    logger().log(
         [
             'copying file',
             'src\t= %s',

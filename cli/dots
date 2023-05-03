@@ -8,7 +8,8 @@ import argparse
 from modules import context
 from modules import config
 from modules.plugins import plugin
-from modules.util import env, logger, tools
+from modules.util import env, tools
+from modules.util.logger import StdErrLogger, Tags, logger, init_logger
 
 
 def _parse_args():
@@ -28,11 +29,10 @@ def _parse_args():
         ),
     )
     parser.add_argument(
-        '--log-level', '-l',
-        help='Logging level [None=0..All=5]',
-        default=1,
-        action='store',
-        type=int,
+        '--log', '-l',
+        help=f'Enabled logging tags, (comma sep.) ({",".join(tag.name.lower() for tag in Tags)})',
+        default='error',
+        type=str,
     )
     parser.add_argument(
         '--dry-run',
@@ -66,15 +66,38 @@ def _parse_args():
     return parser.parse_args()
 
 
+def _get_logging_tags(name_list):
+    name_list = [Tags[name.upper()] for name in name_list]
+
+    must_be_enabled = [Tags.OUTPUT]
+    inclusive_dependency = [Tags.INFO, Tags.WARN, Tags.ERROR]
+
+    for index, tag in enumerate(inclusive_dependency):
+        if tag not in name_list:
+            continue
+
+        must_be_enabled.extend(inclusive_dependency[index:])
+        break
+
+    for tag in must_be_enabled:
+        if tag in name_list:
+            continue
+        name_list.append(tag)
+
+    return name_list
+
+
 def _apply_command(args, plugin_instance, command):
-    with logger.logger().indent(label=f'{type(plugin_instance).__name__}.{command}'):
+    with logger().indent(label=f'{type(plugin_instance).__name__}.{command}'):
         if command == 'compile':
             if args.full:
-                logger.logger().output(
+                logger().log(
+                    Tags.OUTPUT,
                     [''] + tools.safe_dump_yaml_lines(plugin_instance.to_dict())
                 )
             else:
-                logger.logger().output(
+                logger().log(
+                    Tags.OUTPUT,
                     [''] + tools.safe_dump_yaml_lines(plugin_instance.to_dict())
                 )
             return
@@ -85,7 +108,7 @@ def _apply_command(args, plugin_instance, command):
 
         if command == 'apply':
             if not plugin.Plugin.any_difference(plugin_instance.difference()):
-                logger.logger().info('No difference, nothing done')
+                logger().info('No difference, nothing done')
                 return
 
             plugin_instance.backup()
@@ -96,6 +119,9 @@ def _apply_command(args, plugin_instance, command):
 
 
 def main(args):
+    config_path = os.path.realpath(args.config_file)
+    logging_tags = args.log.split(',')
+
     if args.command == 'diff':
         args.diff = True
         args.dry_run = True
@@ -105,11 +131,13 @@ def main(args):
     if args.command == 'plan':
         args.dry_run = True
         args.command = 'apply'
+        logging_tags.append('action')
 
-    config_path = os.path.realpath(args.config_file)
-
-    logger.init_logger(
-        logger.StdErrLogger(args.log_level, args.color == 'yes'),
+    init_logger(
+        StdErrLogger(
+            _get_logging_tags(logging_tags),
+            args.color == 'yes',
+        )
     )
 
     context.init_context(
@@ -123,7 +151,10 @@ def main(args):
     cfg = config.create(tools.load_yaml_by_path(config_path))
 
     if args.command in {'config'}:
-        logger.logger().output([''] + tools.safe_dump_yaml_lines(cfg.to_dict()))
+        logger().log(
+            Tags.OUTPUT,
+            [''] + tools.safe_dump_yaml_lines(cfg.to_dict()),
+        )
         return
 
     matcher = re.compile(args.field)
@@ -132,7 +163,7 @@ def main(args):
 
     for name, plug in all_plugins:
         if not matcher.search(name):
-            logger.logger().info(
+            logger().info(
                 [
                     'Skipping plugin since it does not match field',
                     'plugin\t= %s',
@@ -141,7 +172,7 @@ def main(args):
             )
             continue
 
-        with logger.logger().indent(label=name):
+        with logger().indent(label=name):
             plug.build()
             _apply_command(args, plug, args.command)
 

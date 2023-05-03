@@ -1,10 +1,7 @@
 import enum
-import yaml
 
-from modules.util import logger, tools
-
-
-_LOGGING_ENABLE = False
+from modules.util import tools
+from modules.util.logger import logger, Tags
 
 
 class UnmergeableValues(Exception):
@@ -80,10 +77,8 @@ def _get_value_merge_options(opts):
 
 
 def _log_merge_start(opts, base, extend):
-    if not _LOGGING_ENABLE:
-        return
-
-    logger.logger().info(
+    logger().log(
+        Tags.MERGE,
         [
             'Merging:',
             '> options:'
@@ -96,10 +91,8 @@ def _log_merge_start(opts, base, extend):
 
 
 def _log_merge_result(result):
-    if not _LOGGING_ENABLE:
-        return
-
-    logger.logger().info(
+    logger().log(
+        Tags.MERGE,
         [
             '> result:',
         ] + tools.safe_dump_yaml_lines(result),
@@ -141,7 +134,7 @@ def _dict_union_recursive(base, extend, opts):
         if key not in extend:
             continue
 
-        with logger.logger().indent(f'#{key}'):
+        with logger().indent(f'#{key}'):
             copy[key] = merge(base_value, extend[key], opts)
 
     for key, extend_value in extend.items():
@@ -215,14 +208,14 @@ def _merge_impl_value(base, extend, opts):
 
 def _merge_impl(base, extend, opts):
     if isinstance(base, list):
-        with logger.logger().indent(label='list'):
+        with logger().indent(label='list'):
             return _merge_impl_list(base, extend, opts)
 
     if isinstance(base, dict):
-        with logger.logger().indent(label='dict'):
+        with logger().indent(label='dict'):
             return _merge_impl_dict(base, extend, opts)
 
-    with logger.logger().indent(label='value'):
+    with logger().indent(label='value'):
         return _merge_impl_value(base, extend, opts)
 
 
@@ -237,7 +230,7 @@ def merge(base, extend, opts):
     """
     Merges extend into base using configuration provided in opts
     """
-    with logger.logger().indent(label='merge'):
+    with logger().indent(label='merge'):
         return _merge_impl(base, extend, opts)
 
 
@@ -258,7 +251,7 @@ def merge_opts(opts_a, opts_b):
     if not opts_b:
         return opts_a
 
-    with logger.logger().indent(label='merge-opts'):
+    with logger().indent(label='merge-opts'):
         return merge(opts_a, opts_b, opts_merging_opts)
 
 

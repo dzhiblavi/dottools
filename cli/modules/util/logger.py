@@ -1,4 +1,5 @@
 import abc
+import enum
 import sys
 from typing import List, Any, Optional
 
@@ -7,10 +8,19 @@ from modules.util import colors
 
 
 LEVEL_NONE = 0
-LEVEL_ERROR = 2
-LEVEL_WARNING = 3
-LEVEL_INFO = 4
-LEVEL_ALL = 5
+LEVEL_ERROR = 1
+LEVEL_WARNING = 2
+LEVEL_INFO = 3
+LEVEL_ALL = 4
+
+
+class Tags(enum.Enum):
+    OUTPUT = 'light_green'
+    MERGE = 'cyan'
+    ACTION = 'magenta'
+    INFO = 'green'
+    WARN = 'yellow'
+    ERROR = 'red'
 
 
 class _Indent:
@@ -51,30 +61,21 @@ class Logger(abc.ABC):
         'white',
     ]
 
-    _COLOR_MAP = {
-        'ACTION': 'magenta',
-        'DIFF': 'cyan',
-        'INFO': 'green',
-        'WARN': 'yellow',
-        'ERROR': 'red',
-        'OUT': 'light_green',
-    }
-
-    def __init__(self, level: int, use_colors: bool) -> None:
+    def __init__(self, enabled_tags=None, use_colors=True) -> None:
         self._indent: int = 0
         self._labels: List[str] = []
-        self._level: int = level
         self._use_colors: bool = use_colors
+        self._enabled_tags = enabled_tags or []
+
+    @abc.abstractmethod
+    def _log_impl(self, head: str, fmt: str, *args) -> None:
+        pass
 
     def _clr(self, text: str, *args, **kwargs) -> str:
         if not self._use_colors:
             return text
 
         return colors.fmt(text, *args, **kwargs)
-
-    @abc.abstractmethod
-    def _log_impl(self, head: str, fmt: str, *args: List[Any]) -> None:
-        pass
 
     def _preamble(self) -> str:
         indent = '-' * self._indent
@@ -98,48 +99,33 @@ class Logger(abc.ABC):
             )
         )
 
-    def _build_log_args(self, preamble: str, fmt, *args: List[Any]) -> List[Any]:
+    def _build_log_args(self, preamble: str, fmt, *args) -> List[Any]:
         return [preamble + self._fmt('| ' + ' ' * self._indent, fmt), *args]
 
-    def _log_with_tag(self, tag: str, fmt, *args: List[Any]) -> None:
+    def log(self, tag: Tags, fmt, *args):
+        if tag not in self._enabled_tags:
+            return
+
         self._log_impl(
-            self._clr(tag, self._COLOR_MAP[tag]) + ': ',
+            self._clr(tag.name, tag.value) + ': ',
             *self._build_log_args(self._preamble(), fmt, *args),
         )
 
-    def output(self, fmt, *args: List[Any]) -> None:
-        self._log_with_tag('OUT', fmt, *args)
+    def info(self, fmt, *args):
+        self.log(Tags.INFO,  fmt, *args)
 
-    def info(self, fmt, *args: List[Any]):
-        if self._level < LEVEL_INFO:
-            return
+    def warning(self, fmt, *args):
+        self.log(Tags.WARN, fmt, *args)
 
-        self._log_with_tag('INFO',  fmt, *args)
-
-    def warning(self, fmt, *args: List[Any]):
-        if self._level < LEVEL_WARNING:
-            return
-
-        self._log_with_tag('WARN', fmt, *args)
-
-    def error(self, fmt, *args: List[Any]):
-        if self._level < LEVEL_ERROR:
-            return
-
-        self._log_with_tag('ERROR', fmt, *args)
-
-    def diff(self, fmt, *args: List[Any]):
-        self._log_with_tag('DIFF', fmt, *args)
-
-    def action(self, fmt, *args: List[Any]):
-        self._log_with_tag('ACTION', fmt, *args)
+    def error(self, fmt, *args):
+        self.log(Tags.ERROR, fmt, *args)
 
     def indent(self, label: Optional[str] = None, offset: int = 4):
         return _Indent(self, offset, label)
 
 
 class StdErrLogger(Logger):
-    def _log_impl(self, head: str, fmt: str, *args: List[Any]) -> None:
+    def _log_impl(self, head: str, fmt: str, *args) -> None:
         if head:
             sys.stderr.write(head)
         sys.stderr.write(fmt % args)
