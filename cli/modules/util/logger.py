@@ -87,7 +87,7 @@ class Logger(abc.ABC):
     def _newline(self, preamble: str) -> str:
         return '\n     ' + preamble
 
-    def _fmt(self, preamble: str, fmt: str | List[str]) -> str:
+    def _fmt(self, preamble: str, fmt) -> str:
         if isinstance(fmt, str):
             return fmt
 
@@ -98,40 +98,40 @@ class Logger(abc.ABC):
             )
         )
 
-    def _build_log_args(self, preamble: str, fmt: str | List[str], *args: List[Any]) -> List[Any]:
+    def _build_log_args(self, preamble: str, fmt, *args: List[Any]) -> List[Any]:
         return [preamble + self._fmt('| ' + ' ' * self._indent, fmt), *args]
 
-    def _log_with_tag(self, tag: str, fmt: str | List[str], *args: List[Any]) -> None:
+    def _log_with_tag(self, tag: str, fmt, *args: List[Any]) -> None:
         self._log_impl(
             self._clr(tag, self._COLOR_MAP[tag]) + ': ',
             *self._build_log_args(self._preamble(), fmt, *args),
         )
 
-    def output(self, fmt: str | List[str], *args: List[Any]) -> None:
+    def output(self, fmt, *args: List[Any]) -> None:
         self._log_with_tag('OUT', fmt, *args)
 
-    def info(self, fmt: str | List[str], *args: List[Any]):
+    def info(self, fmt, *args: List[Any]):
         if self._level < LEVEL_INFO:
             return
 
         self._log_with_tag('INFO',  fmt, *args)
 
-    def warning(self, fmt: str | List[str], *args: List[Any]):
+    def warning(self, fmt, *args: List[Any]):
         if self._level < LEVEL_WARNING:
             return
 
         self._log_with_tag('WARN', fmt, *args)
 
-    def error(self, fmt: str | List[str], *args: List[Any]):
+    def error(self, fmt, *args: List[Any]):
         if self._level < LEVEL_ERROR:
             return
 
         self._log_with_tag('ERROR', fmt, *args)
 
-    def diff(self, fmt: str | List[str], *args: List[Any]):
+    def diff(self, fmt, *args: List[Any]):
         self._log_with_tag('DIFF', fmt, *args)
 
-    def action(self, fmt: str | List[str], *args: List[Any]):
+    def action(self, fmt, *args: List[Any]):
         self._log_with_tag('ACTION', fmt, *args)
 
     def indent(self, label: Optional[str] = None, offset: int = 4):
