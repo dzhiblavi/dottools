@@ -1,4 +1,4 @@
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Dict
 
 import yaml
 
@@ -8,7 +8,7 @@ from modules.context import context
 from modules.plugins import plugin, file
 
 
-def _create_prompt(prompt_style: List[str], local: Optional[dict[str, Any]] = None) -> str:
+def _create_prompt(prompt_style: List[str], local: Optional[Dict[str, Any]] = None) -> str:
     prompt = ''
 
     for part in prompt_style:
