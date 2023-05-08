@@ -48,29 +48,21 @@ class Context:  # pylint: disable=too-many-instance-attributes
         return tools.load_yaml_by_path(self.rel(path))
 
     def apply(self, value: str, local: Optional[Dict[str, Any]] = None) -> str:
+        if not value.startswith('$'):
+            return value
+
         if not local:
             local = {}
 
-        try:
-            return eval(  # pylint: disable=eval-used
-                value, {},
-                {
-                    'ctx': self,
-                    'fmt': colors.fmt,
-                    'env': os.environ,
-                    **local,
-                },
-            )
-        except Exception as err:  # pylint: disable=broad-except
-            logger.logger().warning(
-                [
-                    'Failed to apply context, falling back to value',
-                    'value\t= %s',
-                    'error\t= %s',
-                ],
-                value, str(err),
-            )
-            return value
+        return eval(  # pylint: disable=eval-used
+            value[1:], {},
+            {
+                'ctx': self,
+                'fmt': colors.fmt,
+                'env': os.environ,
+                **local,
+            },
+        )
 
     def evaluate(self, obj: Any):
         if isinstance(obj, str):
