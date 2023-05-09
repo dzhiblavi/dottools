@@ -1,4 +1,5 @@
 import os
+import re
 
 from modules.config import Config
 from modules import common, context
@@ -9,21 +10,21 @@ class Generate(plugin.Plugin):
     def __init__(self, config: Config):
         super().__init__(config)
 
+        self._regex = re.compile('{{(.*)}}')
         self._template = os.path.expanduser(self.config.get('template').astype(str))
         assert os.path.isfile(self._template), f'Path {self._template} is not a file'
 
+    def _eval_match(self, match):
+        return eval(  # pylint: disable=eval-used
+            match.group(1), {},
+            {
+                'ctx': context.context(),
+                'cfg': self.config,
+            },
+        )
+
     def _eval_line(self, line: str) -> str:
-        try:
-            result = eval(  # pylint: disable=eval-used
-                line.replace('"', '\"').replace('\\', '\\\\'),
-                {},
-                {
-                    'ctx': context.context(),
-                    'cfg': self.config,
-                },
-            )
-        except Exception:  # pylint: disable=broad-except
-            return line
+        result = re.sub(self._regex, self._eval_match, line)
 
         if result[-1] == os.linesep:
             return result
