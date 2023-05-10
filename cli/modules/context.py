@@ -1,9 +1,8 @@
 import os
 from typing import Any, Dict, Optional
 
-from modules.util import colors
-from modules.util import logger
-from modules.util import tools
+from modules.util import colors, tools
+from modules.util.logger import logger
 
 
 class Context:  # pylint: disable=too-many-instance-attributes
@@ -48,21 +47,32 @@ class Context:  # pylint: disable=too-many-instance-attributes
         return tools.load_yaml_by_path(self.rel(path))
 
     def apply(self, value: str, local: Optional[Dict[str, Any]] = None) -> str:
-        if not value.startswith('$'):
+        if not value.startswith('(( ') or not value.endswith(' ))'):
             return value
 
         if not local:
             local = {}
 
-        return eval(  # pylint: disable=eval-used
-            value[1:], {},
-            {
-                'ctx': self,
-                'fmt': colors.fmt,
-                'env': os.environ,
-                **local,
-            },
-        )
+        try:
+            return eval(  # pylint: disable=eval-used
+                value[3:-3], {},
+                {
+                    'ctx': self,
+                    'fmt': colors.fmt,
+                    'env': os.environ,
+                    **local,
+                },
+            )
+        except Exception as error:
+            logger().error(
+                [
+                    'Failed to evaluate (( ... ))',
+                    'value\t= %s',
+                    'error\t= %s',
+                ],
+                value, error,
+            )
+            raise
 
     def evaluate(self, obj: Any):
         if isinstance(obj, str):

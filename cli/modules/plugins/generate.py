@@ -4,6 +4,7 @@ import re
 from modules.config import Config
 from modules import common, context
 from modules.plugins import plugin
+from modules.util.logger import logger
 
 
 class Generate(plugin.Plugin):
@@ -15,13 +16,24 @@ class Generate(plugin.Plugin):
         assert os.path.isfile(self._template), f'Path {self._template} is not a file'
 
     def _eval_match(self, match):
-        return eval(  # pylint: disable=eval-used
-            match.group(1), {},
-            {
-                'ctx': context.context(),
-                'cfg': self.config,
-            },
-        )
+        try:
+            return eval(  # pylint: disable=eval-used
+                match.group(1), {},
+                {
+                    'ctx': context.context(),
+                    'cfg': self.config,
+                },
+            )
+        except Exception as error:
+            logger().error(
+                [
+                    'Failed to evaluate (( ... ))',
+                    'value\t= %s',
+                    'error\t= %s',
+                ],
+                match.group(1), error,
+            )
+            raise
 
     def _eval_line(self, line: str) -> str:
         result = re.sub(self._regex, self._eval_match, line)
