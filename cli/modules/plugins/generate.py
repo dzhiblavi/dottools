@@ -17,13 +17,13 @@ class Generate(plugin.Plugin):
 
     def _eval_match(self, match):
         try:
-            return eval(  # pylint: disable=eval-used
+            return str(eval(  # pylint: disable=eval-used
                 match.group(1), {},
                 {
                     'ctx': context.context(),
                     'cfg': self.config,
                 },
-            )
+            ))
         except Exception as error:
             logger().error(
                 [
