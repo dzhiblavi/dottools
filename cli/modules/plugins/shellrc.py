@@ -52,11 +52,14 @@ def _write_base_env(config: Config, out: List[str]) -> None:
     out.append('\n')
 
 
-def _write_env(config: Config, out: List[str]) -> None:
-    for k, value in config.get('env', {}).astype(dict).items():
-        if config.is_config_key(k):
+def _write_assignment(config: Config, prefix: str, field: str, out: List[str], wrap=None):
+    if wrap is None:
+        wrap = ''
+
+    for key, value in config.get(field, {}).astype(dict).items():
+        if config.is_config_key(key):
             continue
-        out.append(f'export {k}={str(value)}\n')
+        out.append(f'{prefix} {key}={wrap}{str(value)}{wrap}\n')
     out.append('\n')
 
 
@@ -85,7 +88,8 @@ def _create_shellrc(config: Config) -> List[str]:
     _write_scripts(config, 'pre', out)
     _write_info_config(config, out)
     _write_base_env(config, out)
-    _write_env(config, out)
+    _write_assignment(config, 'export', 'env', out, wrap='')
+    _write_assignment(config, 'alias', 'aliases', out, wrap='"')
     _write_prompt(config, out)
     _write_path(config, out)
     _write_scripts(config, 'mid', out)
