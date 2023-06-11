@@ -1,8 +1,7 @@
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
-from modules.util import colors, tools
-from modules.util.logger import logger
+from modules.util import tools
 
 
 class Context:  # pylint: disable=too-many-instance-attributes
@@ -45,56 +44,6 @@ class Context:  # pylint: disable=too-many-instance-attributes
 
     def load(self, path: str) -> Any:
         return tools.load_yaml_by_path(self.rel(path))
-
-    def apply(self, value: str, local: Optional[Dict[str, Any]] = None) -> str:
-        if not value.startswith('(( ') or not value.endswith(' ))'):
-            return value
-
-        if not local:
-            local = {}
-
-        try:
-            return eval(  # pylint: disable=eval-used
-                value[3:-3], {},
-                {
-                    'ctx': self,
-                    'fmt': colors.fmt,
-                    'env': os.environ,
-                    **local,
-                },
-            )
-        except Exception as error:
-            logger().error(
-                [
-                    'Failed to evaluate (( ... ))',
-                    'value\t= %s',
-                    'error\t= %s',
-                ],
-                value, error,
-            )
-            raise
-
-    def evaluate(self, obj: Any):
-        if isinstance(obj, str):
-            value = self.apply(obj)
-            if value == obj:
-                return value
-
-            return self.evaluate(value)
-
-        if isinstance(obj, list):
-            return [
-                self.evaluate(item)
-                for item in obj
-            ]
-
-        if isinstance(obj, dict):
-            return {
-                key: self.evaluate(value)
-                for key, value in obj.items()
-            }
-
-        return obj
 
 
 _GLOBAL_CONTEXT = None
