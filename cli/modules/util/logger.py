@@ -84,7 +84,7 @@ class Logger(abc.ABC):
     def _preamble(self) -> str:
         indent = '-' * self._indent
         labels = self._clr('/', 'white').join(
-            self._clr(label, _LABELS_COLORS[index])
+            self._clr(label, _LABELS_COLORS[index % len(_LABELS_COLORS)])
             for index, label in enumerate(self._labels)
         )
         return f'{indent}[{labels}] '

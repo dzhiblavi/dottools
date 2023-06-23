@@ -15,6 +15,25 @@ class Generate(plugin.Plugin):
         self._template = os.path.expanduser(self.config.get('template').astype(str))
         assert os.path.isfile(self._template), f'Path {self._template} is not a file'
 
+    def _get_all_evaluations(self, line):
+        result = []
+
+        for match in re.finditer(self._regex, line):
+            result.append({
+                'expression': match.group(0),
+                'value': self._eval_match(match),
+            })
+
+        return result
+
+    def _to_dict_extra(self):
+        params = []
+
+        for line in common.read_lines_or_empty(self._template):
+            params.extend(self._get_all_evaluations(line))
+
+        return {'params': params}
+
     def _eval_match(self, match):
         try:
             return str(eval(  # pylint: disable=eval-used

@@ -12,6 +12,7 @@ class File(plugin.Plugin):
         self._destination = os.path.expanduser(self.config.get('dst').astype(str))
         self._current_lines = None
         self._lines = None
+        self._plugin = None
 
         source = self.config.get('src')
 
@@ -29,6 +30,12 @@ class File(plugin.Plugin):
 
         else:
             assert False, f'Failed to create File plugin from {config}'
+
+    def _to_dict_extra(self):
+        if not self._plugin:
+            return {}
+
+        return self._plugin._to_dict_extra()
 
     def build(self):
         self._current_lines = common.read_lines_or_empty(self._destination)

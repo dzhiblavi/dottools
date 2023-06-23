@@ -16,10 +16,19 @@ class Plugin(abc.ABC):
         instance (for debugging and informational purposes)
         """
 
-        return {
+        common = {
             'type': type(self).__name__,
             'config': self.config.to_dict(),
         }
+        common.update(self._to_dict_extra())
+        return common
+
+    def _to_dict_extra(self):
+        """
+        Returns a dictionary with extra information on
+        this plugin instance (variables etc)
+        """
+        return {}
 
     def build(self):
         """
