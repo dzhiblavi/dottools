@@ -34,7 +34,7 @@ def format_range_unified(start, stop):
     return '{},{}'.format(beginning, length)
 
 
-def iget_diff_lines(
+def _get_diff_lines(
     a, b, fromfile='', tofile='', fromfiledate=None, tofiledate=None, lineterm='\n',
 ):
     n = 2
@@ -88,6 +88,6 @@ def get_diff_lines(a, b, fromfile='', tofile='', fromfiledate=None, tofiledate=N
     return list(
         map(
             lambda line: line,
-            iget_diff_lines(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
+            _get_diff_lines(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
         )
     )

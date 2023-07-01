@@ -41,11 +41,7 @@ def _write_base_env(config: Config, out: List[str]) -> None:
     base_env = {
         env.CONFIG_FILE_PATH_ENV_VAR: context().cfg_path,
         env.HOST_NAME_ENV: config.get('host-name', 'unknown').astype(str),
-        env.ROOT_PATH_ENV_VAR: context().dot_root,
-        env.BIN_PATH_ENV: context().dot_bin,
-        env.LIB_PATH_ENV: context().dot_lib,
-        env.DOCKER_PATH_ENV: context().dot_docker,
-        env.DOCKER_BIN_PATH_ENV: context().dot_docker_bin,
+        env.ROOT_PATH_ENV_VAR: context().dottools_root,
     }
     for k, value in base_env.items():
         out.append(f'export {k}={value}\n')
