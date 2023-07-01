@@ -2,10 +2,10 @@ from typing import Any, Optional, List, Dict
 
 import yaml
 
-from modules.config import Config
-from modules.util import env
-from modules.context import context
-from modules.plugins import plugin, file
+from config import Config
+from util import env
+from context import context
+from plugins import plugin, file
 
 
 def _create_prompt(prompt_style: List[str], local: Optional[Dict[str, Any]] = None) -> str:
@@ -53,8 +53,8 @@ def _write_assignment(config: Config, prefix: str, field: str, out: List[str], w
         wrap = ''
 
     for key, value in config.get(field, {}).astype(dict).items():
-        if config.is_config_key(key):
-            continue
+        # if config.is_config_key(key):
+            # continue
         out.append(f'{prefix} {key}={wrap}{str(value)}{wrap}\n')
     out.append('\n')
 

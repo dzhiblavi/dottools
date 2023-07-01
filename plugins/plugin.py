@@ -1,9 +1,9 @@
 import abc
 
 from typing import Type, Dict, Tuple, List
-from modules.config import Config
-from modules.util import tools
-from modules.util.logger import logger, Tags
+from config import Config
+from util import tools
+from util.logger import logger, Tags
 
 
 class Plugin(abc.ABC):

@@ -4,10 +4,13 @@ import re
 from typing import Any, Dict, List, Optional
 from functools import reduce, partial
 
-from modules.context import context
-from modules.util import merge, colors
-from modules.util.logger import logger
-from modules.config.config import Config
+from context import context
+from util import merge, colors
+from util.logger import logger
+from config.config import Config
+
+
+FROM_DICT_KEY = 'from'
 
 
 def _apply_meta_to_raw_objects(obj: Any, list_key: bool = False) -> Any:
@@ -53,8 +56,8 @@ def _apply_meta_to_raw_objects(obj: Any, list_key: bool = False) -> Any:
 
 
 def _get_objects_to_merge_to_and_remove_from_key(obj: Any, opts: Dict[str, str]) -> List[Any]:
-    from_objs = obj[Config.FROM_DICT_KEY]
-    del obj[Config.FROM_DICT_KEY]
+    from_objs = obj[FROM_DICT_KEY]
+    del obj[FROM_DICT_KEY]
 
     if isinstance(from_objs, dict) and 'list' in from_objs:
         from_objs = from_objs['list']
@@ -71,7 +74,7 @@ def _get_objects_to_merge_to_and_remove_from_key(obj: Any, opts: Dict[str, str])
 
 
 def _apply_merging_impl(obj: Any, opts: Dict[str, str]) -> Any:
-    if Config.FROM_DICT_KEY not in obj:
+    if FROM_DICT_KEY not in obj:
         return obj
 
     # Merge all objects in 'from' list sequentially
@@ -95,7 +98,11 @@ def _apply_merging(obj: Any, opts: Dict[str, str]) -> Any:
             obj[key] = _apply_merging(value, opts)
 
         # now we can merge the obj
-        return _apply_merging_impl(obj, opts)
+        obj = _apply_merging_impl(obj, opts)
+
+        # remove utility key from the object
+        if merge.MERGE_OPTS_CONFIG_KEY in obj:
+            del obj[merge.MERGE_OPTS_CONFIG_KEY]
 
     if isinstance(obj, list):
         # just apply merging to all elements in the list
@@ -183,7 +190,7 @@ def _expand_eval_statement_recursively(obj: Any, local=None):
 def _create_config(obj: Any, parent: Optional[Config] = None) -> Config:
     if isinstance(obj, dict):
         config = Config(parent=parent)
-        config.set_obj(
+        config.set_object(
             {
                 key: _create_config(value, parent=config)
                 for key, value in obj.items()
@@ -193,7 +200,7 @@ def _create_config(obj: Any, parent: Optional[Config] = None) -> Config:
 
     if isinstance(obj, list):
         config = Config(parent=parent)
-        config.set_obj([_create_config(item, parent) for item in obj])
+        config.set_object([_create_config(item, parent) for item in obj])
         return config
 
     return Config(obj, parent)
@@ -201,7 +208,7 @@ def _create_config(obj: Any, parent: Optional[Config] = None) -> Config:
 
 def _match_and_replace_strings_recursively(config: Config, local=None) -> Config:
     if config.istype(str):
-        config.set_obj(_match_and_replace_string(config.astype(str), local))
+        config.set_object(_match_and_replace_string(config.astype(str), local))
 
     if config.istype(list):
         for item in config.astype(list):

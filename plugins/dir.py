@@ -1,15 +1,15 @@
 import os
 
-from modules import common
-from modules.util.logger import logger
-from modules.plugins import plugin
+import common
+from util.logger import logger
+from plugins import plugin
 
 
 class Dir(plugin.Plugin):
     def __init__(self, config):
         super().__init__(config)
 
-        self._ignore_regex = config.ignored_paths()
+        self._ignore_regex = config.get_ignored_paths()
         self._destination = os.path.expanduser(self.config.get('dst').astype(str))
         self._source = os.path.expanduser(self.config.get('src').astype(str))
         self._diff_abspaths = []

@@ -1,7 +1,10 @@
 import enum
 
-from modules.util import tools
-from modules.util.logger import logger, Tags
+from util import tools
+from util.logger import logger, Tags
+
+
+MERGE_OPTS_CONFIG_KEY = 'merge-opts'
 
 
 class UnmergeableValues(Exception):
@@ -251,7 +254,7 @@ def merge_opts(opts_a, opts_b):
     if not opts_b:
         return opts_a
 
-    with logger().indent(label='merge-opts'):
+    with logger().indent(label=MERGE_OPTS_CONFIG_KEY):
         return merge(opts_a, opts_b, opts_merging_opts)
 
 
@@ -262,7 +265,7 @@ def get_merge_opts(obj, base_opts=None):
     if base_opts is None:
         base_opts = {}
 
-    if 'merge-opts' not in obj:
+    if MERGE_OPTS_CONFIG_KEY not in obj:
         return base_opts
 
-    return merge_opts(base_opts, obj['merge-opts'])
+    return merge_opts(base_opts, obj[MERGE_OPTS_CONFIG_KEY])

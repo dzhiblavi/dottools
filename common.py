@@ -2,9 +2,9 @@ import os
 import shutil
 from typing import List, Callable, Any
 
-from modules.context import context
-from modules.util import diff
-from modules.util.logger import logger, Tags
+from context import context
+from util import diff
+from util.logger import logger, Tags
 
 
 def _create_parent_dir_if_not_exists(file_path: str) -> None:

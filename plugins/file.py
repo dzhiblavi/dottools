@@ -1,9 +1,9 @@
 import os
 
-from modules import common
-from modules.util import diff
-from modules.util.logger import logger
-from modules.plugins import plugin
+import common
+from util import diff
+from util.logger import logger
+from plugins import plugin
 
 
 class File(plugin.Plugin):

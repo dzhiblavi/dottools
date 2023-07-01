@@ -4,11 +4,11 @@ import os
 import re
 import argparse
 
-from modules import context
-from modules import config
-from modules.plugins import plugin
-from modules.util import env, tools
-from modules.util.logger import StdErrLogger, Tags, TAGS_DEPENDENCIES, logger, init_logger
+import context
+import config
+from plugins import plugin
+from util import env, tools
+from util.logger import StdErrLogger, Tags, TAGS_DEPENDENCIES, logger, init_logger
 
 
 def _parse_args():

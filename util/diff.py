@@ -1,6 +1,6 @@
 import difflib
 
-from modules.util import colors
+from util import colors
 
 
 def get_diff_line(string_a, string_b):
@@ -34,6 +34,7 @@ def format_range_unified(start, stop):
     return '{},{}'.format(beginning, length)
 
 
+# flake8: noqa: C901
 def _get_diff_lines(
     a, b, fromfile='', tofile='', fromfiledate=None, tofiledate=None, lineterm='\n',
 ):

@@ -1,3 +1,5 @@
+from typing import Optional
+
 _COLORMAP = {
     'black': 30,
     'red': 31,
@@ -45,7 +47,7 @@ def fmt_line(line: str, fg=None, bg=None, font=None):
     return fmt(line[:-1], fg, bg, font) + '\n'
 
 
-def fmt(text: str, fg=None, bg=None, font=None):
+def fmt(text: str, fg: Optional[str] = None, bg: Optional[str] = None, font: Optional[str] = None):
     result = '{esc}[0;{fg}m'
 
     if fg is not None:
@@ -62,7 +64,7 @@ def fmt(text: str, fg=None, bg=None, font=None):
     return result.format(
         esc='\033',
         text=text,
-        fg=_color_fg(fg),
-        bg=_color_bg(bg),
-        font=_get_font(font),
+        fg=_color_fg(fg or ''),
+        bg=_color_bg(bg or ''),
+        font=_get_font(font or ''),
     )
