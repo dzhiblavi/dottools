@@ -1,6 +1,6 @@
 import difflib
 
-from util import colors
+from dt.util import colors
 
 
 def get_diff_line(string_a, string_b):

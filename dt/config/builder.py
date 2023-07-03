@@ -4,10 +4,10 @@ import re
 from typing import Any, Dict, List, Optional
 from functools import reduce, partial
 
-from context import context
-from util import merge, colors
-from util.logger import logger
-from config.config import Config
+from dt.context import context
+from dt.util import merge, colors
+from dt.util.logger import logger
+from dt.config.config import Config
 
 
 FROM_DICT_KEY = 'from'

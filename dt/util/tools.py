@@ -1,7 +1,6 @@
+import yaml
 import subprocess
 from typing import List, Any, Optional, Tuple
-
-import yaml
 
 
 def has_gpu() -> bool:

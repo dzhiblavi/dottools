@@ -1,4 +1,4 @@
-from config.ignored import IgnoredPathsManager
+from dt.config.ignored import IgnoredPathsManager
 
 
 class _ObjectTree:

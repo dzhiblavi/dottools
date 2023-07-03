@@ -1,9 +1,10 @@
 import abc
 
 from typing import Type, Dict, Tuple, List
-from config import Config
-from util import tools
-from util.logger import logger, Tags
+
+from dt.config import Config
+from dt.util import tools
+from dt.util.logger import logger, Tags
 
 
 class Plugin(abc.ABC):

@@ -1,11 +1,11 @@
 import os
 import re
 
-import common
-import context
-from config import Config
-from plugins import plugin
-from util.logger import logger
+from dt import common
+from dt import context
+from dt.config import Config
+from dt.plugins import plugin
+from dt.util.logger import logger
 
 
 class Generate(plugin.Plugin):
