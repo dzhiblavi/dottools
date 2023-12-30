@@ -92,13 +92,16 @@ class _PluginRegistry:
     def register(self, clazz: Type[Plugin]) -> None:
         name: str = clazz.__name__
 
+        assert name[0].isupper(), \
+            f'Plugin name should start with capital character found {name}'
+
         assert name not in self._name_to_clazz, \
-               f'Plugin with name {name} is already registered as {clazz}'
+            f'Plugin with name {name} is already registered as {clazz}'
 
         assert name[0].isupper(), \
-               f'Plugin name should start with uppercase letter: {name}'
+            f'Plugin name should start with uppercase letter: {name}'
 
-        self._name_to_clazz[name] = clazz
+        self._name_to_clazz[f'plug.{name}'] = clazz
 
     def _get_plugin_spec(self, config: Config) -> Tuple[str, Config]:
         if not config.istype(dict):
