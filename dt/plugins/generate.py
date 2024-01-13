@@ -42,6 +42,7 @@ class Generate(plugin.Plugin):
                 {
                     'ctx': context.context(),
                     'cfg': self.config,
+                    'env': os.environ,
                 },
             ))
         except Exception as error:
