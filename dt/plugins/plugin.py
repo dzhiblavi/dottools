@@ -37,7 +37,7 @@ class Plugin(abc.ABC):
         ob building this plugin instance (maybe None)
         """
 
-    def difference(self) -> list[tuple[str, list[str]]]:
+    def difference(self):
         """
         Should return a list of strings representing difference
         of the self.config and the current state, i.e.
@@ -55,7 +55,7 @@ class Plugin(abc.ABC):
         """
 
     @staticmethod
-    def log_difference(difference: list[tuple[str, list[str]]]) -> None:
+    def log_difference(difference) -> None:
         for tag, diff in difference:
             with logger().indent(label=f'diff({tag})'):
                 if not diff:
@@ -71,7 +71,7 @@ class Plugin(abc.ABC):
                     Plugin.log_difference(diff)
 
     @staticmethod
-    def any_difference(difference: list[tuple[str, list[str]]]) -> bool:
+    def any_difference(difference) -> bool:
         for _, diff in difference:
             if not diff:
                 continue
@@ -87,9 +87,9 @@ class Plugin(abc.ABC):
 
 class _PluginRegistry:
     def __init__(self) -> None:
-        self._name_to_clazz: dict[str, type[Plugin]] = {}
+        self._name_to_clazz = {}
 
-    def register(self, clazz: type[Plugin]) -> None:
+    def register(self, clazz) -> None:
         name: str = clazz.__name__
 
         assert name[0].isupper(), \
@@ -103,7 +103,7 @@ class _PluginRegistry:
 
         self._name_to_clazz[f'plug.{name}'] = clazz
 
-    def _get_plugin_spec(self, config: Config, key: str) -> tuple[str, Config]:
+    def _get_plugin_spec(self, config: Config, key: str):
         assert config.istype(dict), "TBD"
         as_dict = config.astype(dict)
 
@@ -188,21 +188,6 @@ class _PluginRegistry:
                     plugins[key] = self.create_all_plugins(value)
 
             return plugins
-
-        # name, _ = self._get_plugin_spec(config)
-        # if name is not None:
-            # return self.create_plugin(config)
-
-        # if config.istype(dict):
-            # for key in config.astype(dict).keys():
-                # assert not key.startswith('plug.'), \
-                    # (f"Plugin key {key} has not been recognized as plugin key." +
-                     # " Multiple keys in dict? See dots compile.")
-
-            # return {
-                # key: self.create_all_plugins(value)
-                # for key, value in config.astype(dict).items()
-            # }
 
         if config.istype(list):
             return [
