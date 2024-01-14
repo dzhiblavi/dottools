@@ -9,6 +9,8 @@ from dt.util import merge, colors
 from dt.util.logger import logger
 from dt.config.config import Config
 
+from dt.util.logger import StdErrLogger, Tags, TAGS_DEPENDENCIES, init_logger
+from dt.util import tools
 
 FROM_DICT_KEY = 'from'
 
@@ -41,10 +43,10 @@ def _apply_meta_to_raw_objects(obj: Any, list_key: bool = False) -> Any:
             - b
     """
 
-    if isinstance(obj, list) and not list_key:
-        return {
-            'list': [_apply_meta_to_raw_objects(item) for item in obj],
-        }
+    if isinstance(obj, list):
+        if not list_key:
+            return {'list': [_apply_meta_to_raw_objects(item) for item in obj]}
+        return [_apply_meta_to_raw_objects(item) for item in obj]
 
     if isinstance(obj, dict):
         return {
@@ -236,7 +238,13 @@ def create(obj: Any) -> Config:
     }
 
     obj = _expand_eval_statement_recursively(obj, local)
+
+    logger().log(Tags.OUTPUT, [''] + tools.safe_dump_yaml_lines(obj))
+
     obj = _apply_meta_to_raw_objects(obj)
+
+    logger().log(Tags.OUTPUT, [''] + tools.safe_dump_yaml_lines(obj))
+
     obj = _apply_merging(obj, default_merge_opts)
 
     config = _create_config(obj)
