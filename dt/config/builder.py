@@ -238,13 +238,7 @@ def create(obj: Any) -> Config:
     }
 
     obj = _expand_eval_statement_recursively(obj, local)
-
-    logger().log(Tags.OUTPUT, [''] + tools.safe_dump_yaml_lines(obj))
-
     obj = _apply_meta_to_raw_objects(obj)
-
-    logger().log(Tags.OUTPUT, [''] + tools.safe_dump_yaml_lines(obj))
-
     obj = _apply_merging(obj, default_merge_opts)
 
     config = _create_config(obj)
