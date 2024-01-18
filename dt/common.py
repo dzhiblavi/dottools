@@ -84,6 +84,7 @@ def copy_file(src: str, dst: str) -> None:
     _create_parent_dir_if_not_exists(dst)
 
     logger().log(
+        Tags.ACTION,
         [
             'copying file',
             'src\t= %s',
