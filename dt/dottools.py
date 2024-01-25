@@ -99,7 +99,12 @@ def run(
         ),
     )
 
-    load_all_yaml_constructors(context.context().cfg_dir)
+    load_all_yaml_constructors(
+        include_base_dir=context.context().cfg_dir,
+        eval_locals={
+            "ctx": context.context(),
+        },
+    )
 
     cfg = config.create(tools.load_yaml_by_path(config_path))
 

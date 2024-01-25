@@ -16,33 +16,6 @@ FROM_DICT_KEY = 'from'
 
 
 def _apply_meta_to_raw_objects(obj: Any, list_key: bool = False) -> Any:
-    """
-    This function converts all plain lists to object {'list': the-list}
-    So that both list representations will be allowed and treated similarly.
-
-    Thus in yaml, list can be represented in two ways:
-    some_list:
-        - a
-        - b
-
-    or
-
-    some_list:
-        list:
-            - a
-            - b
-
-    And it is useful when you want to add metadata to your list:
-
-    some_list:
-        merge-opts:  # will be applied ONLY to this some_list object
-            list: illegal
-
-        list:
-            - a
-            - b
-    """
-
     if isinstance(obj, list):
         if not list_key:
             return {'list': [_apply_meta_to_raw_objects(item) for item in obj]}
@@ -118,77 +91,6 @@ def _apply_merging(obj: Any, opts: Dict[str, str]) -> Any:
     return obj
 
 
-def _eval(value, local=None):
-    if local is None:
-        local = {}
-
-    try:
-        return eval(value, {}, local)  # pylint: disable=eval-used
-    except Exception as error:
-        logger().error(
-            [
-                'Failed to evaluate (( ... ))',
-                'value\t= %s',
-                'error\t= %s',
-                'local\t= %s'
-            ],
-            value, error, str(local),
-        )
-        raise
-
-
-def _match_and_replace_string(value: str, local: Optional[Dict[str, Any]] = None) -> str:
-    def _match_evaluater(match, local=None):
-        return str(_eval(match.group(1), local))
-
-    return re.sub(
-        re.compile('{{(.*)}}'),
-        partial(_match_evaluater, local=local),
-        value,
-    )
-
-
-def _expand_eval_statement(value: str, local=None):
-    """
-    Eval statement is string of form (( abc )),
-    where abs is to be evaluated as plain python code.
-    """
-
-    if not value.startswith('(( ') or not value.endswith(' ))'):
-        return value
-
-    return _eval(value[3:-3], local)
-
-
-def _expand_eval_statement_recursively(obj: Any, local=None):
-    """
-    Recursively expands strings of form (( abc )) in obj
-    exactly as explained in _expand_eval_statement
-    """
-
-    if isinstance(obj, str):
-        value = _expand_eval_statement(obj, local)
-
-        if value == obj:
-            return value
-
-        return _expand_eval_statement_recursively(value, local)
-
-    if isinstance(obj, list):
-        return [
-            _expand_eval_statement_recursively(item, local)
-            for item in obj
-        ]
-
-    if isinstance(obj, dict):
-        return {
-            key: _expand_eval_statement_recursively(value, local)
-            for key, value in obj.items()
-        }
-
-    return obj
-
-
 def _create_config(obj: Any, parent: Optional[Config] = None) -> Config:
     if isinstance(obj, dict):
         config = Config(parent=parent)
@@ -208,22 +110,6 @@ def _create_config(obj: Any, parent: Optional[Config] = None) -> Config:
     return Config(obj, parent)
 
 
-def _match_and_replace_strings_recursively(config: Config, local=None) -> Config:
-    if config.istype(str):
-        config.set_object(_match_and_replace_string(config.astype(str), local))
-
-    if config.istype(list):
-        for item in config.astype(list):
-            item = _match_and_replace_strings_recursively(item, local)
-
-    if config.istype(dict):
-        values = config.astype(dict)
-        for key, value in values.items():
-            values[key] = _match_and_replace_strings_recursively(value, local)
-
-    return config
-
-
 def create(obj: Any) -> Config:
     default_merge_opts = {
         'value': 'overwrite',
@@ -237,11 +123,6 @@ def create(obj: Any) -> Config:
         'env': os.environ,
     }
 
-    obj = _expand_eval_statement_recursively(obj, local)
     obj = _apply_meta_to_raw_objects(obj)
     obj = _apply_merging(obj, default_merge_opts)
-
-    config = _create_config(obj)
-    config = _match_and_replace_strings_recursively(config, {**local, 'cfg': config})
-
-    return config
+    return _create_config(obj)
