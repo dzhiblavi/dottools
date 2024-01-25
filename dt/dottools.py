@@ -6,6 +6,7 @@ from dt import config
 from dt.plugins import plugin
 from dt.util import tools
 from dt.util.logger import StdErrLogger, Tags, TAGS_DEPENDENCIES, logger, init_logger
+from dt.util.yaml import load_all_yaml_constructors
 
 
 def _get_must_be_enabled_tags(command):
@@ -97,6 +98,8 @@ def run(
             dry_run=command in {'config', 'diff', 'plan', 'compile'},
         ),
     )
+
+    load_all_yaml_constructors(context.context().cfg_dir)
 
     cfg = config.create(tools.load_yaml_by_path(config_path))
 

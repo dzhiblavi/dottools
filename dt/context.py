@@ -18,9 +18,6 @@ class Context:  # pylint: disable=too-many-instance-attributes
         assert os.path.exists(result), f'Path {result} does not exist'
         return os.path.abspath(result)
 
-    def load(self, path: str) -> Any:
-        return tools.load_yaml_by_path(self.rel(path))
-
     def rel(self, path: str) -> str:
         return self._join(self.cfg_dir, path)
 
