@@ -1,5 +1,5 @@
 import os
-import re
+import jinja2
 
 from dt import common
 from dt import context
@@ -11,66 +11,33 @@ from dt.util.logger import logger
 class Generate(plugin.Plugin):
     def __init__(self, config: Config):
         super().__init__(config)
-
-        self._regex = re.compile('{{(.*)}}')
-        self._template = os.path.expanduser(self.config.get('template').astype(str))
-        assert os.path.isfile(self._template), f'Path {self._template} is not a file'
-
-    def _get_all_evaluations(self, line):
-        result = []
-
-        for match in re.finditer(self._regex, line):
-            result.append({
-                'expression': match.group(0),
-                'value': self._eval_match(match),
-            })
-
-        return result
-
-    def _to_dict_extra(self):
-        params = []
-
-        for line in common.read_lines_or_empty(self._template):
-            params.extend(self._get_all_evaluations(line))
-
-        return {'params': params}
-
-    def _eval_match(self, match):
-        try:
-            return str(eval(  # pylint: disable=eval-used
-                match.group(1), {},
-                {
-                    'ctx': context.context(),
-                    'cfg': self.config,
-                    'env': os.environ,
-                },
-            ))
-        except Exception as error:
-            logger().error(
-                [
-                    'Failed to evaluate (( ... ))',
-                    'value\t= %s',
-                    'error\t= %s',
-                ],
-                match.group(1), error,
-            )
-            raise
-
-    def _eval_line(self, line: str) -> str:
-        result = re.sub(self._regex, self._eval_match, line)
-
-        if result[-1] == os.linesep:
-            return result
-
-        return result + os.linesep
+        self._environment = jinja2.Environment()
+        self._template = os.path.expanduser(self.config.get("template").astype(str))
+        assert os.path.isfile(self._template), f"Path {self._template} is not a file"
 
     def build(self):
-        return list(
-            map(
-                self._eval_line,
-                common.read_lines_or_empty(self._template)
-            )
+        template = self._environment.from_string(
+            "".join(common.read_lines_or_empty(self._template))
         )
 
+        def map_line(line):
+            if not line or len(line) == 0:
+                return os.linesep
+
+            if line[-1] == os.linesep:
+                return line
+
+            return line + os.linesep
+
+        return [
+            map_line(line)
+            for line in template.render(
+                {
+                    "ctx": context.context(),
+                    "cfg": self.config,
+                    "env": os.environ,
+                }
+            ).split(os.linesep)
+        ]
 
 plugin.registry().register(Generate)

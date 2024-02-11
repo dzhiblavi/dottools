@@ -1,5 +1,6 @@
-from dt.config.ignored import IgnoredPathsManager
+from pydoc import locate
 
+from dt.config.ignored import IgnoredPathsManager
 
 class _ObjectTree:
     def __init__(self, obj=None, parent=None):
@@ -121,6 +122,9 @@ class _TypedObjectTree(_ObjectTreeDictAdapter):
         return obj[self.SPECIAL_LIST_KEY].astype(list)
 
     def astype(self, clazz):
+        if isinstance(clazz, str):
+            clazz = locate(clazz)
+
         if clazz == list:
             return self._aslist()
 
