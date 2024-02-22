@@ -12,40 +12,41 @@ from dt.config.config import Config
 from dt.util.logger import StdErrLogger, Tags, TAGS_DEPENDENCIES, init_logger
 from dt.util import tools
 
-FROM_DICT_KEY = 'from'
+FROM_DICT_KEY = "_from"
+LIST_META_KEY = "_list"
 
 
 def _apply_meta_to_raw_objects(obj: Any, list_key: bool = False) -> Any:
     if isinstance(obj, list):
         if not list_key:
-            return {'list': [_apply_meta_to_raw_objects(item) for item in obj]}
+            return {LIST_META_KEY: [_apply_meta_to_raw_objects(item) for item in obj]}
         return [_apply_meta_to_raw_objects(item) for item in obj]
 
     if isinstance(obj, dict):
         return {
-            key: _apply_meta_to_raw_objects(value, list_key=key == 'list')
+            key: _apply_meta_to_raw_objects(value, list_key=key == LIST_META_KEY)
             for key, value in obj.items()
         }
 
     return obj
 
 
-def _get_objects_to_merge_to_and_remove_from_key(obj: Any, opts: Dict[str, str]) -> List[Any]:
+def _get_objects_to_merge_to_and_remove_from_key(
+    obj: Any, opts: Dict[str, str]
+) -> List[Any]:
     from_objs = obj[FROM_DICT_KEY]
     del obj[FROM_DICT_KEY]
 
-    if isinstance(from_objs, dict) and 'list' in from_objs:
-        from_objs = from_objs['list']
+    if isinstance(from_objs, dict) and LIST_META_KEY in from_objs:
+        from_objs = from_objs[LIST_META_KEY]
 
-    if not isinstance(from_objs, list):
-        from_objs = [from_objs]
+    assert isinstance(
+        from_objs, list
+    ), f"{FROM_DICT_KEY} section should use list only! Found {from_objs}"
+    # if not isinstance(from_objs, list):
+    #     from_objs = [from_objs]
 
-    return list(
-        map(
-            lambda from_obj: _apply_merging(from_obj, opts),
-            from_objs
-        )
-    )
+    return list(map(lambda from_obj: _apply_merging(from_obj, opts), from_objs))
 
 
 def _apply_merging_impl(obj: Any, opts: Dict[str, str]) -> Any:
@@ -81,12 +82,7 @@ def _apply_merging(obj: Any, opts: Dict[str, str]) -> Any:
 
     if isinstance(obj, list):
         # just apply merging to all elements in the list
-        return list(
-            map(
-                lambda from_obj: _apply_merging(from_obj, opts),
-                obj
-            )
-        )
+        return list(map(lambda from_obj: _apply_merging(from_obj, opts), obj))
 
     return obj
 
@@ -95,10 +91,7 @@ def _create_config(obj: Any, parent: Optional[Config] = None) -> Config:
     if isinstance(obj, dict):
         config = Config(parent=parent)
         config.set_object(
-            {
-                key: _create_config(value, parent=config)
-                for key, value in obj.items()
-            }
+            {key: _create_config(value, parent=config) for key, value in obj.items()}
         )
         return config
 
@@ -112,15 +105,15 @@ def _create_config(obj: Any, parent: Optional[Config] = None) -> Config:
 
 def create(obj: Any) -> Config:
     default_merge_opts = {
-        'value': 'overwrite',
-        'list': 'append',
-        'dict': 'union_recursive',
+        "value": "overwrite",
+        "list": "append",
+        "dict": "union_recursive",
     }
 
     local = {
-        'ctx': context(),
-        'fmt': colors.fmt,
-        'env': os.environ,
+        "ctx": context(),
+        "fmt": colors.fmt,
+        "env": os.environ,
     }
 
     obj = _apply_meta_to_raw_objects(obj)

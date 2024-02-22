@@ -14,10 +14,10 @@ def _get_must_be_enabled_tags(command):
         Tags.OUTPUT,
     ]
 
-    if command in {'plan'}:
+    if command in {"plan"}:
         must_be_enabled.append(Tags.ACTION)
 
-    if command in {'diff'}:
+    if command in {"diff"}:
         must_be_enabled.append(Tags.DIFF)
 
     return must_be_enabled
@@ -50,28 +50,28 @@ def _get_logging_tags(name_list, command):
 
 
 def _apply_command(plugin_instance, command):
-    with logger().indent(label=f'{type(plugin_instance).__name__}.{command}'):
-        if command == 'compile':
+    with logger().indent(label=f"{type(plugin_instance).__name__}.{command}"):
+        if command == "compile":
             logger().log(
                 Tags.OUTPUT,
-                [''] + tools.safe_dump_yaml_lines(plugin_instance.to_dict())
+                [""] + tools.safe_dump_yaml_lines(plugin_instance.to_dict()),
             )
             return
 
-        if command == 'diff':
+        if command == "diff":
             plugin.Plugin.log_difference(plugin_instance.difference())
             return
 
-        if command in {'plan', 'apply'}:
+        if command in {"plan", "apply"}:
             if not plugin.Plugin.any_difference(plugin_instance.difference()):
-                logger().info('No difference, nothing done')
+                logger().info("No difference, nothing done")
                 return
 
             plugin_instance.backup()
             plugin_instance.apply()
             return
 
-        assert False, f'Invalid command {command}'
+        assert False, f"Invalid command {command}"
 
 
 def run(
@@ -86,8 +86,8 @@ def run(
 
     init_logger(
         StdErrLogger(
-            _get_logging_tags(log.split(','), command),
-            color == 'yes',
+            _get_logging_tags(log.split(","), command),
+            color == "yes",
         )
     )
 
@@ -95,7 +95,7 @@ def run(
         context.Context(
             config_path=config_path,
             dottools_root=os.path.realpath(dottools_root),
-            dry_run=command in {'config', 'diff', 'plan', 'compile'},
+            dry_run=command in {"config", "diff", "plan", "compile"},
         ),
     )
 
@@ -108,25 +108,29 @@ def run(
 
     cfg = config.create(tools.load_yaml_by_path(config_path))
 
-    if command in {'config'}:
+    if command in {"config"}:
         logger().log(
             Tags.OUTPUT,
-            [''] + tools.safe_dump_yaml_lines(cfg.to_dict()),
+            [""] + tools.safe_dump_yaml_lines(cfg.to_dict()),
         )
         return
 
     matcher = re.compile(field)
     plugins_object = plugin.registry().create_all_plugins(cfg)
-    all_plugins = tools.find_instances_of_subclasses(plugins_object, base_class=plugin.Plugin)
+    all_plugins = tools.find_instances_of_subclasses(
+        plugins_object, base_class=plugin.Plugin
+    )
 
     for name, plug in all_plugins:
         if not matcher.search(name):
             logger().info(
                 [
-                    'Skipping plugin since it does not match field',
-                    'plugin\t= %s',
-                    'regex\t= %s',
-                ], name, field,
+                    "Skipping plugin since it does not match field",
+                    "plugin\t= %s",
+                    "regex\t= %s",
+                ],
+                name,
+                field,
             )
             continue
 

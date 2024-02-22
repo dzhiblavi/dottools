@@ -6,7 +6,7 @@ class IgnoredPathsManager:
     # A reserved key for storing a list of paths that should
     # be completely ignored by the tool. The paths are collected
     # on the whole path from an obj (see constructor) to the root.
-    IGNORED_PATHS_KEY = 'ignored-paths'
+    IGNORED_PATHS_KEY = "_ignored-paths"
 
     def __init__(self, obj):
         self._obj = obj
@@ -19,12 +19,18 @@ class IgnoredPathsManager:
         if not parent_obj:
             return [], []
 
-        return parent_obj.get_ignored_paths().copy(), parent_obj.get_ignored_paths_str().copy()
+        return (
+            parent_obj.get_ignored_paths().copy(),
+            parent_obj.get_ignored_paths_str().copy(),
+        )
 
     def _build_ignored_path(self) -> List[Any]:
         ignored_paths, ignored_paths_str = self._find_ignored_paths_in_parents()
 
-        if not self._obj.is_native_type(dict) or self.IGNORED_PATHS_KEY not in self._obj:
+        if (
+            not self._obj.is_native_type(dict)
+            or self.IGNORED_PATHS_KEY not in self._obj
+        ):
             return ignored_paths, ignored_paths_str
 
         for pattern in self._obj.get(self.IGNORED_PATHS_KEY).astype(list):

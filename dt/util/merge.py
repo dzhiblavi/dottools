@@ -4,7 +4,7 @@ from dt.util import tools
 from dt.util.logger import logger, Tags
 
 
-MERGE_OPTS_CONFIG_KEY = 'merge-opts'
+MERGE_OPTS_CONFIG_KEY = "merge-opts"
 
 
 class UnmergeableValues(Exception):
@@ -26,33 +26,33 @@ class NonMatchingTypes(Exception):
 
 
 ListMergeOption = enum.Enum(
-    'ListMergeOption',
+    "ListMergeOption",
     [
-        'ILLEGAL',
-        'APPEND',
-        'PREPEND',
-        'PRESERVE',
-        'OVERWRITE',
+        "ILLEGAL",
+        "APPEND",
+        "PREPEND",
+        "PRESERVE",
+        "OVERWRITE",
     ],
 )
 
 DictMergeOption = enum.Enum(
-    'DictMergeOption',
+    "DictMergeOption",
     [
-        'ILLEGAL',
-        'UNION_RECURSIVE',
-        'UNION_ADD_ONLY',
-        'PRESERVE',
-        'OVERWRITE',
+        "ILLEGAL",
+        "UNION_RECURSIVE",
+        "UNION_ADD_ONLY",
+        "PRESERVE",
+        "OVERWRITE",
     ],
 )
 
 ValueMergeOption = enum.Enum(
-    'ValueMergeOption',
+    "ValueMergeOption",
     [
-        'ILLEGAL',
-        'PRESERVE',
-        'OVERWRITE',
+        "ILLEGAL",
+        "PRESERVE",
+        "OVERWRITE",
     ],
 )
 
@@ -64,32 +64,34 @@ def _get_opts(opts, key, clazz):
     try:
         return clazz[opts[key].upper()]
     except ValueError as exc:
-        raise IllegalOption(f'Illegal option: {opts}') from exc
+        raise IllegalOption(f"Illegal option: {opts}") from exc
 
 
 def _get_list_merge_options(opts):
-    return _get_opts(opts, 'list', ListMergeOption)
+    return _get_opts(opts, "list", ListMergeOption)
 
 
 def _get_dict_merge_options(opts):
-    return _get_opts(opts, 'dict', DictMergeOption)
+    return _get_opts(opts, "dict", DictMergeOption)
 
 
 def _get_value_merge_options(opts):
-    return _get_opts(opts, 'value', ValueMergeOption)
+    return _get_opts(opts, "value", ValueMergeOption)
 
 
 def _log_merge_start(opts, base, extend):
     logger().log(
         Tags.MERGE,
-        [
-            'Merging:',
-            '> options:'
-        ] + tools.safe_dump_yaml_lines(opts) + [
-            '> base:',
-        ] + tools.safe_dump_yaml_lines(base) + [
-            '> extend with:',
-        ] + tools.safe_dump_yaml_lines(extend),
+        ["Merging:", "> options:"]
+        + tools.safe_dump_yaml_lines(opts)
+        + [
+            "> base:",
+        ]
+        + tools.safe_dump_yaml_lines(base)
+        + [
+            "> extend with:",
+        ]
+        + tools.safe_dump_yaml_lines(extend),
     )
 
 
@@ -97,8 +99,9 @@ def _log_merge_result(result):
     logger().log(
         Tags.MERGE,
         [
-            '> result:',
-        ] + tools.safe_dump_yaml_lines(result),
+            "> result:",
+        ]
+        + tools.safe_dump_yaml_lines(result),
     )
 
 
@@ -106,12 +109,12 @@ def _merge_impl_list(base, extend, opts):
     _log_merge_start(opts, base, extend)
 
     if not isinstance(base, list) or not isinstance(extend, list):
-        raise NonMatchingTypes('non-list values passed to list merge function')
+        raise NonMatchingTypes("non-list values passed to list merge function")
 
     list_opt = _get_list_merge_options(opts)
 
     if list_opt == ListMergeOption.ILLEGAL:
-        raise UnmergeableValues('list merging is restricted via config')
+        raise UnmergeableValues("list merging is restricted via config")
 
     if list_opt == ListMergeOption.APPEND:
         result = base + extend
@@ -137,7 +140,7 @@ def _dict_union_recursive(base, extend, opts):
         if key not in extend:
             continue
 
-        with logger().indent(f'#{key}'):
+        with logger().indent(f"#{key}"):
             copy[key] = merge(base_value, extend[key], opts)
 
     for key, extend_value in extend.items():
@@ -153,7 +156,7 @@ def _dict_union_add_only(base, extend):
     intersection = set(base.keys()) & set(extend.keys())
 
     if intersection:
-        raise UnmergeableValues(f'non-empty keys intersection: {intersection}')
+        raise UnmergeableValues(f"non-empty keys intersection: {intersection}")
 
     copy = dict(base)
     copy.update(extend)
@@ -164,13 +167,13 @@ def _merge_impl_dict(base, extend, opts):
     _log_merge_start(opts, base, extend)
 
     if not isinstance(base, dict) or not isinstance(extend, dict):
-        raise NonMatchingTypes('non-dict passed in dict merge function')
+        raise NonMatchingTypes("non-dict passed in dict merge function")
 
     opts = _merged_merge_opts(base, extend, opts)
     dict_opt = _get_dict_merge_options(opts)
 
     if dict_opt == DictMergeOption.ILLEGAL:
-        raise UnmergeableValues('dicts merge is restricted via config')
+        raise UnmergeableValues("dicts merge is restricted via config")
 
     if dict_opt == DictMergeOption.UNION_RECURSIVE:
         result = _dict_union_recursive(base, extend, opts)
@@ -192,12 +195,12 @@ def _merge_impl_value(base, extend, opts):
     _log_merge_start(opts, base, extend)
 
     if not isinstance(extend, type(base)):
-        raise UnmergeableValues('values of different types cannot be merged')
+        raise UnmergeableValues("values of different types cannot be merged")
 
     value_opt = _get_value_merge_options(opts)
 
     if value_opt == ValueMergeOption.ILLEGAL:
-        raise UnmergeableValues('values merge is restricted via config')
+        raise UnmergeableValues("values merge is restricted via config")
 
     if value_opt == ValueMergeOption.PRESERVE:
         result = base
@@ -211,14 +214,14 @@ def _merge_impl_value(base, extend, opts):
 
 def _merge_impl(base, extend, opts):
     if isinstance(base, list):
-        with logger().indent(label='list'):
+        with logger().indent(label="list"):
             return _merge_impl_list(base, extend, opts)
 
     if isinstance(base, dict):
-        with logger().indent(label='dict'):
+        with logger().indent(label="dict"):
             return _merge_impl_dict(base, extend, opts)
 
-    with logger().indent(label='value'):
+    with logger().indent(label="value"):
         return _merge_impl_value(base, extend, opts)
 
 
@@ -233,7 +236,7 @@ def merge(base, extend, opts):
     """
     Merges extend into base using configuration provided in opts
     """
-    with logger().indent(label='merge'):
+    with logger().indent(label="merge"):
         return _merge_impl(base, extend, opts)
 
 
@@ -243,9 +246,9 @@ def merge_opts(opts_a, opts_b):
     using strategy supposedly well suited for such application (see below)
     """
     opts_merging_opts = {
-        'value': 'overwrite',
-        'list': 'append',
-        'dict': 'union_recursive',
+        "value": "overwrite",
+        "list": "append",
+        "dict": "union_recursive",
     }
 
     if not opts_a:

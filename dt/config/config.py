@@ -2,6 +2,7 @@ from pydoc import locate
 
 from dt.config.ignored import IgnoredPathsManager
 
+
 class _ObjectTree:
     def __init__(self, obj=None, parent=None):
         self._object = obj
@@ -29,11 +30,12 @@ class _ObjectTreeDictAdapter(_ObjectTree):
         super().__init__(obj, parent)
 
     def _assure_dict(self, method):
-        assert isinstance(self.get_object(), dict), \
-               f"{method}() called on an Object of type different from dict"
+        assert isinstance(
+            self.get_object(), dict
+        ), f"{method}() called on an Object of type different from dict"
 
     def __contains__(self, key: str) -> bool:
-        self._assure_dict('__contains__')
+        self._assure_dict("__contains__")
         return key in self.get_object()
 
     def _lift_raw_object(self, default):
@@ -49,9 +51,9 @@ class _ObjectTreeDictAdapter(_ObjectTree):
 
     def get(self, key: str, default=None):
         # This implementation adds support for dotted notation
-        self._assure_dict('get')
+        self._assure_dict("get")
 
-        parts = key.split('.')
+        parts = key.split(".")
         instance = self
 
         for part in parts:
@@ -63,7 +65,7 @@ class _ObjectTreeDictAdapter(_ObjectTree):
         return instance
 
     def getp(self, key: str, default=None):
-        self._assure_dict('getp')
+        self._assure_dict("getp")
         instance = self
 
         while instance is not None:
@@ -79,8 +81,8 @@ class _ObjectTreeDictAdapter(_ObjectTree):
 class _TypedObjectTree(_ObjectTreeDictAdapter):
     # A reserved key indicating that this object is a list
     # while physically it is a dictionary:
-    # self._object = { 'list': [...], <possibly, metadata> }
-    SPECIAL_LIST_KEY = 'list'
+    # self._object = { '_list': [...], <possibly, metadata> }
+    SPECIAL_LIST_KEY = "_list"
 
     def __init__(self, obj=None, parent=None):
         super().__init__(obj, parent)
@@ -89,9 +91,9 @@ class _TypedObjectTree(_ObjectTreeDictAdapter):
         obj = self.get_object()
 
         assert (
-            isinstance(obj, dict) and
-            self.SPECIAL_LIST_KEY in obj and
-            obj[self.SPECIAL_LIST_KEY].istype(list)
+            isinstance(obj, dict)
+            and self.SPECIAL_LIST_KEY in obj
+            and obj[self.SPECIAL_LIST_KEY].istype(list)
         )
 
     def get_type(self):
@@ -129,8 +131,9 @@ class _TypedObjectTree(_ObjectTreeDictAdapter):
             return self._aslist()
 
         obj = self.get_object()
-        assert isinstance(obj, clazz), \
-               f'Type mismatch: expected {clazz}, found {type(obj).__name__}'
+        assert isinstance(
+            obj, clazz
+        ), f"Type mismatch: expected {clazz}, found {type(obj).__name__}"
 
         return obj
 
@@ -142,10 +145,7 @@ class Config(_TypedObjectTree, IgnoredPathsManager):
 
     def to_dict(self):
         if self.is_native_type(dict):
-            obj = {
-                key: value.to_dict()
-                for key, value in self.get_object().items()
-            }
+            obj = {key: value.to_dict() for key, value in self.get_object().items()}
 
             # Only add ignored-paths to where they are actually defined
             # Otherwise, it makes a mess.
