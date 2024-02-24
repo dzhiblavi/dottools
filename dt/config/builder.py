@@ -16,6 +16,14 @@ FROM_DICT_KEY = "_from"
 LIST_META_KEY = "_list"
 
 
+def _apply_meta_kv(key, value):
+    # if kv-pair is <from, value> && if value is not a list, make it a list
+    if key == FROM_DICT_KEY and not isinstance(value, list):
+        value = [value]
+
+    return _apply_meta_to_raw_objects(value, list_key=key == LIST_META_KEY)
+
+
 def _apply_meta_to_raw_objects(obj: Any, list_key: bool = False) -> Any:
     if isinstance(obj, list):
         if not list_key:
@@ -23,10 +31,7 @@ def _apply_meta_to_raw_objects(obj: Any, list_key: bool = False) -> Any:
         return [_apply_meta_to_raw_objects(item) for item in obj]
 
     if isinstance(obj, dict):
-        return {
-            key: _apply_meta_to_raw_objects(value, list_key=key == LIST_META_KEY)
-            for key, value in obj.items()
-        }
+        return {key: _apply_meta_kv(key, value) for key, value in obj.items()}
 
     return obj
 
@@ -40,12 +45,7 @@ def _get_objects_to_merge_to_and_remove_from_key(
     if isinstance(from_objs, dict) and LIST_META_KEY in from_objs:
         from_objs = from_objs[LIST_META_KEY]
 
-    assert isinstance(
-        from_objs, list
-    ), f"{FROM_DICT_KEY} section should use list only! Found {from_objs}"
-    # if not isinstance(from_objs, list):
-    #     from_objs = [from_objs]
-
+    assert isinstance(from_objs, list)
     return list(map(lambda from_obj: _apply_merging(from_obj, opts), from_objs))
 
 
