@@ -1,24 +1,13 @@
-import os
-import re
-
 from typing import Any, Dict, List, Optional
-from functools import reduce, partial
+from functools import reduce
 
-from dt.context import context
-from dt.util import merge, colors
-from dt.util.logger import logger
-from dt.config.config import Config
-
-from dt.util.logger import StdErrLogger, Tags, TAGS_DEPENDENCIES, init_logger
-from dt.util import tools
-
-FROM_DICT_KEY = "_from"
-LIST_META_KEY = "_list"
+from dt.util import merge
+from dt.config.config import Config, LIST_META_KEY, FROM_META_KEY
 
 
 def _apply_meta_kv(key, value):
     # if kv-pair is <from, value> && if value is not a list, make it a list
-    if key == FROM_DICT_KEY and not isinstance(value, list):
+    if key == FROM_META_KEY and not isinstance(value, list):
         value = [value]
 
     return _apply_meta_to_raw_objects(value, list_key=key == LIST_META_KEY)
@@ -39,8 +28,8 @@ def _apply_meta_to_raw_objects(obj: Any, list_key: bool = False) -> Any:
 def _get_objects_to_merge_to_and_remove_from_key(
     obj: Any, opts: Dict[str, str]
 ) -> List[Any]:
-    from_objs = obj[FROM_DICT_KEY]
-    del obj[FROM_DICT_KEY]
+    from_objs = obj[FROM_META_KEY]
+    del obj[FROM_META_KEY]
 
     if isinstance(from_objs, dict) and LIST_META_KEY in from_objs:
         from_objs = from_objs[LIST_META_KEY]
@@ -50,7 +39,7 @@ def _get_objects_to_merge_to_and_remove_from_key(
 
 
 def _apply_merging_impl(obj: Any, opts: Dict[str, str]) -> Any:
-    if FROM_DICT_KEY not in obj:
+    if FROM_META_KEY not in obj:
         return obj
 
     # Merge all objects in 'from' list sequentially
@@ -108,12 +97,6 @@ def create(obj: Any) -> Config:
         "value": "overwrite",
         "list": "append",
         "dict": "union_recursive",
-    }
-
-    local = {
-        "ctx": context(),
-        "fmt": colors.fmt,
-        "env": os.environ,
     }
 
     obj = _apply_meta_to_raw_objects(obj)

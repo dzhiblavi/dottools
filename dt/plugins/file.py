@@ -9,19 +9,19 @@ from dt.plugins import plugin
 class File(plugin.Plugin):
     def __init__(self, config, custom_line_source=None):
         super().__init__(config)
-        self._destination = os.path.expanduser(self.config.get('dst').astype(str))
+        self._destination = os.path.expanduser(self.config.get("dst").astype(str))
         self._current_lines = None
         self._lines = None
         self._plugin = None
 
-        source = self.config.get('src')
+        source = self.config.get("src")
 
         if custom_line_source is not None:
             self._lines_source = custom_line_source
 
         elif source.istype(str):
             source_path = source.astype(str)
-            assert os.path.isfile(source_path), f'Path {source_path} is not a file'
+            assert os.path.isfile(source_path), f"Path {source_path} is not a file"
             self._lines_source = lambda: common.read_lines_or_empty(source_path)
 
         elif source.istype(dict):
@@ -29,7 +29,7 @@ class File(plugin.Plugin):
             self._lines_source = self._plugin.build
 
         else:
-            assert False, f'Failed to create File plugin from {config}'
+            assert False, f"Failed to create File plugin from {config}"
 
     def _to_dict_extra(self):
         if not self._plugin:
@@ -47,22 +47,22 @@ class File(plugin.Plugin):
         ]
 
     def backup(self):
-        with logger().indent('perform_backup'):
-            backup_path = self._destination + '.backup'
+        with logger().indent("perform_backup"):
+            backup_path = self._destination + ".backup"
 
             if os.path.isfile(self._destination):
                 common.copy_file(self._destination, backup_path)
             else:
                 logger().warning(
                     [
-                        'Not backing up since it does not exist',
-                        'loc\t= %s',
+                        "Not backing up since it does not exist",
+                        "loc\t= %s",
                     ],
                     self._destination,
                 )
 
     def apply(self):
-        with logger().indent('perform_apply'):
+        with logger().indent("perform_apply"):
             return common.write_lines(self._lines, self._destination)
 
 

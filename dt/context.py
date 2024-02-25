@@ -1,21 +1,20 @@
 import os
-from typing import Any
 
 from dt.util import tools
 
 
-class Context:  # pylint: disable=too-many-instance-attributes
+class Context:
     def __init__(self, config_path: str, dottools_root: str, dry_run: bool) -> None:
         self.dry_run = dry_run
         self.cfg_path = config_path
         self.cfg_dir = os.path.dirname(os.path.dirname(config_path))
-        self.home = os.path.expanduser('~')
+        self.home = os.path.expanduser("~")
         self.has_gpu = tools.has_gpu()
         self.dottools_root = dottools_root
 
     def _join(self, head: str, path: str) -> str:
         result = os.path.join(head, path)
-        assert os.path.exists(result), f'Path {result} does not exist'
+        assert os.path.exists(result), f"Path {result} does not exist"
         return os.path.abspath(result)
 
     def rel(self, path: str) -> str:
@@ -32,15 +31,13 @@ def override_context(context_instance: Context) -> None:
 
 def init_context(context_instance: Context) -> None:
     global _GLOBAL_CONTEXT  # pylint: disable=global-variable-not-assigned,global-statement
-    assert _GLOBAL_CONTEXT is None, \
-           'Context has already been initialized'
+    assert _GLOBAL_CONTEXT is None, "Context has already been initialized"
 
     override_context(context_instance)
 
 
 def context() -> Context:
     global _GLOBAL_CONTEXT  # pylint: disable=global-variable-not-assigned,global-statement
-    assert _GLOBAL_CONTEXT is not None, \
-           'Context has not been initialized'
+    assert _GLOBAL_CONTEXT is not None, "Context has not been initialized"
 
     return _GLOBAL_CONTEXT

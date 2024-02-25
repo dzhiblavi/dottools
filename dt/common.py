@@ -16,11 +16,12 @@ def _create_parent_dir_if_not_exists(file_path: str) -> None:
     logger().log(
         Tags.ACTION,
         [
-            'creating parent directory',
-            'path\t= %s',
-            'dir\t= %s',
+            "creating parent directory",
+            "path\t= %s",
+            "dir\t= %s",
         ],
-        file_path, dir_name,
+        file_path,
+        dir_name,
     )
 
     if not context().dry_run:
@@ -31,8 +32,8 @@ def try_remove(file: str) -> None:
     logger().log(
         Tags.ACTION,
         [
-            'trying to remove path',
-            'path\t= %s',
+            "trying to remove path",
+            "path\t= %s",
         ],
         file,
     )
@@ -52,14 +53,14 @@ def read_lines_or_empty(file: str) -> List[str]:
     if not os.path.exists(file):
         logger().warning(
             [
-                'path does not exist, no lines read',
-                'path\t= %s',
+                "path does not exist, no lines read",
+                "path\t= %s",
             ],
             file,
         )
         return []
 
-    with open(file, 'r', encoding='utf-8') as file_obj:
+    with open(file, "r", encoding="utf-8") as file_obj:
         return list(file_obj.readlines())
 
 
@@ -69,14 +70,14 @@ def write_lines(lines: List[str], path: str) -> None:
     logger().log(
         Tags.ACTION,
         [
-            'writing content to file',
-            'path\t= %s',
+            "writing content to file",
+            "path\t= %s",
         ],
         path,
     )
 
     if not context().dry_run:
-        with open(path, 'w', encoding='utf-8') as file:
+        with open(path, "w", encoding="utf-8") as file:
             file.writelines(lines)
 
 
@@ -86,11 +87,12 @@ def copy_file(src: str, dst: str) -> None:
     logger().log(
         Tags.ACTION,
         [
-            'copying file',
-            'src\t= %s',
-            'dst\t= %s',
+            "copying file",
+            "src\t= %s",
+            "dst\t= %s",
         ],
-        src, dst,
+        src,
+        dst,
     )
 
     if not context().dry_run:
@@ -105,7 +107,8 @@ def files_difference(src: str, dst: str) -> List[str]:
 
 
 def recurse_directories(
-    src: str, dst: str,
+    src: str,
+    dst: str,
     function: Callable[[str, str], None],
     ignore_regex: List[Any],
 ):
@@ -115,10 +118,10 @@ def recurse_directories(
     if any(map(lambda pattern: pattern.search(src), ignore_regex)):
         logger().info(
             [
-                'Ignoring path',
-                'path\t= %s',
+                "Ignoring path",
+                "path\t= %s",
             ],
-            src
+            src,
         )
         return
 

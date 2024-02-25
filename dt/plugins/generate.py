@@ -3,9 +3,8 @@ import jinja2
 
 from dt import common
 from dt import context
-from dt.config import Config
+from dt.config.config import Config
 from dt.plugins import plugin
-from dt.util.logger import logger
 
 
 class Generate(plugin.Plugin):
@@ -39,5 +38,6 @@ class Generate(plugin.Plugin):
                 }
             ).split(os.linesep)
         ]
+
 
 plugin.registry().register(Generate)

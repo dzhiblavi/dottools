@@ -2,11 +2,10 @@ import os
 import re
 
 from dt import context
-from dt import config
+from dt.config import config, builder
 from dt.plugins import plugin
 from dt.util import tools
 from dt.util.logger import StdErrLogger, Tags, TAGS_DEPENDENCIES, logger, init_logger
-from dt.util.yaml import load_all_yaml_constructors
 
 
 def _get_must_be_enabled_tags(command):
@@ -49,6 +48,24 @@ def _get_logging_tags(name_list, command):
             return tag_list
 
 
+def _setup_yaml_constructors(base_include_dir, eval_locals):
+    from dt.util import yaml_tools
+
+    def _context_rel_tag_handler(_, node):
+        return context.context().rel(path=node.value)
+
+    def _context_dot_tag_handler(_, node):
+        return context.context().rel(path=f"dots/{node.value}")
+
+    def _plugin_tag_handler(_, node):
+        return f"plug.{node.value}"
+
+    yaml_tools.load_common_yaml_constructors(base_include_dir, eval_locals)
+    yaml_tools.load_yaml_constructor("!rel", _context_rel_tag_handler)
+    yaml_tools.load_yaml_constructor("!dot", _context_dot_tag_handler)
+    yaml_tools.load_yaml_constructor("!plug", _plugin_tag_handler)
+
+
 def _apply_command(plugin_instance, command):
     with logger().indent(label=f"{type(plugin_instance).__name__}.{command}"):
         if command == "compile":
@@ -56,22 +73,16 @@ def _apply_command(plugin_instance, command):
                 Tags.OUTPUT,
                 [""] + tools.safe_dump_yaml_lines(plugin_instance.to_dict()),
             )
-            return
-
-        if command == "diff":
+        elif command == "diff":
             plugin.Plugin.log_difference(plugin_instance.difference())
-            return
-
-        if command in {"plan", "apply"}:
+        elif command in {"plan", "apply"}:
             if not plugin.Plugin.any_difference(plugin_instance.difference()):
                 logger().info("No difference, nothing done")
-                return
-
-            plugin_instance.backup()
-            plugin_instance.apply()
-            return
-
-        assert False, f"Invalid command {command}"
+            else:
+                plugin_instance.backup()
+                plugin_instance.apply()
+        else:
+            assert False, f"Invalid command {command}"
 
 
 def run(
@@ -99,14 +110,14 @@ def run(
         ),
     )
 
-    load_all_yaml_constructors(
-        include_base_dir=context.context().cfg_dir,
+    _setup_yaml_constructors(
+        base_include_dir=context.context().cfg_dir,
         eval_locals={
             "ctx": context.context(),
         },
     )
 
-    cfg = config.create(tools.load_yaml_by_path(config_path))
+    cfg = builder.create(tools.load_yaml_by_path(config_path))
 
     if command in {"config"}:
         logger().log(

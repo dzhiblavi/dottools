@@ -4,7 +4,7 @@ from dt.util import tools
 from dt.util.logger import logger, Tags
 
 
-MERGE_OPTS_CONFIG_KEY = "merge-opts"
+MERGE_OPTS_CONFIG_KEY = "_merge-opts"
 
 
 class UnmergeableValues(Exception):
@@ -257,7 +257,7 @@ def merge_opts(opts_a, opts_b):
     if not opts_b:
         return opts_a
 
-    with logger().indent(label=MERGE_OPTS_CONFIG_KEY):
+    with logger().silent():
         return merge(opts_a, opts_b, opts_merging_opts)
 
 

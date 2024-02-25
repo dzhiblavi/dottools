@@ -6,7 +6,7 @@ from typing import List, Any, Optional, Tuple
 def has_gpu() -> bool:
     try:
         subprocess.check_call(
-            args=['nvidia-smi'],
+            args=["nvidia-smi"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             shell=True,
@@ -18,12 +18,12 @@ def has_gpu() -> bool:
 
 
 def load_yaml_by_path(path: str) -> Any:
-    with open(path, 'r', encoding='utf-8') as file:
+    with open(path, "r", encoding="utf-8") as file:
         return yaml.safe_load(file)
 
 
 def safe_dump_yaml_lines(obj: Any, indent: int = 2) -> List[str]:
-    return yaml.dump(obj, indent=indent).replace('%', '%%').splitlines()
+    return yaml.dump(obj, indent=indent).replace("%", "%%").splitlines()
 
 
 def find_instances_of_subclasses(
@@ -35,7 +35,7 @@ def find_instances_of_subclasses(
     """
 
     if prefix is None:
-        prefix = ''
+        prefix = ""
 
     items = None
 
@@ -53,6 +53,6 @@ def find_instances_of_subclasses(
 
     result = []
     for key, item in items:
-        result.extend(find_instances_of_subclasses(item, base_class, f'{prefix}.{key}'))
+        result.extend(find_instances_of_subclasses(item, base_class, f"{prefix}.{key}"))
 
     return result

@@ -1,8 +1,6 @@
 import abc
 
-# from typing import Tuple, List
-
-from dt.config import Config
+from dt.config.config import Config
 from dt.util import tools
 from dt.util.logger import logger, Tags
 
@@ -18,8 +16,8 @@ class Plugin(abc.ABC):
         """
 
         common = {
-            'type': type(self).__name__,
-            'config': self.config.to_dict(),
+            "type": type(self).__name__,
+            "config": self.config.to_dict(),
         }
         common.update(self._to_dict_extra())
         return common
@@ -57,15 +55,15 @@ class Plugin(abc.ABC):
     @staticmethod
     def log_difference(difference) -> None:
         for tag, diff in difference:
-            with logger().indent(label=f'diff({tag})'):
+            with logger().indent(label=f"diff({tag})"):
                 if not diff:
-                    logger().info('No difference')
+                    logger().info("No difference")
                     continue
 
                 if isinstance(diff[0], str):
                     logger().log(
                         Tags.DIFF,
-                        ''.join(diff).replace('%', '%%'),
+                        "".join(diff).replace("%", "%%"),
                     )
                 else:
                     Plugin.log_difference(diff)
@@ -92,16 +90,19 @@ class _PluginRegistry:
     def register(self, clazz) -> None:
         name: str = clazz.__name__
 
-        assert name[0].isupper(), \
-            f'Plugin name should start with capital character found {name}'
+        assert name[
+            0
+        ].isupper(), f"Plugin name should start with capital character found {name}"
 
-        assert name not in self._name_to_clazz, \
-            f'Plugin with name {name} is already registered as {clazz}'
+        assert (
+            name not in self._name_to_clazz
+        ), f"Plugin with name {name} is already registered as {clazz}"
 
-        assert name[0].isupper(), \
-            f'Plugin name should start with uppercase letter: {name}'
+        assert name[
+            0
+        ].isupper(), f"Plugin name should start with uppercase letter: {name}"
 
-        self._name_to_clazz[f'plug.{name}'] = clazz
+        self._name_to_clazz[f"plug.{name}"] = clazz
 
     def _get_plugin_spec(self, config: Config, key: str):
         assert config.istype(dict), "TBD"
@@ -115,12 +116,13 @@ class _PluginRegistry:
         plugin_name = key
         plugin_config = as_dict[plugin_name]
 
-        if plugin_name == 'Plugin':
-            assert 'type' in plugin_config, \
-                   f'"type" field not found in Plugin: config {plugin_config}'
+        if plugin_name == "Plugin":
+            assert (
+                "type" in plugin_config
+            ), f'"type" field not found in Plugin: config {plugin_config}'
 
-            plugin_name = plugin_config.get('type').astype(str)
-            plugin_config = plugin_config.get('config', {})
+            plugin_name = plugin_config.get("type").astype(str)
+            plugin_config = plugin_config.get("config", {})
 
         assert plugin_name in self._name_to_clazz, "TBD"
         return plugin_name, plugin_config
@@ -148,14 +150,17 @@ class _PluginRegistry:
 
         logger().info(
             [
-                'Creating plugin...',
-                'name=\t %s',
-                'config:',
-            ] + tools.safe_dump_yaml_lines(plugin_config.to_dict()),
+                "Creating plugin...",
+                "name=\t %s",
+                "config:",
+            ]
+            + tools.safe_dump_yaml_lines(plugin_config.to_dict()),
             plugin_name,
         )
 
-        assert plugin_name in self._name_to_clazz, f'Plugin with name {plugin_name} not found'
+        assert (
+            plugin_name in self._name_to_clazz
+        ), f"Plugin with name {plugin_name} not found"
         return self._name_to_clazz[plugin_name](plugin_config)
 
     def create_all_plugins(self, config: Config):
@@ -180,7 +185,7 @@ class _PluginRegistry:
             conf_dict = config.astype(dict)
 
             for key, value in conf_dict.items():
-                if key == 'Plugin' or key.startswith('plug.'):
+                if key == "Plugin" or key.startswith("plug."):
                     # A plugin
                     plugins[key] = self.create_plugin(config, key)
                 else:
@@ -190,10 +195,7 @@ class _PluginRegistry:
             return plugins
 
         if config.istype(list):
-            return [
-                self.create_all_plugins(item)
-                for item in config.astype(list)
-            ]
+            return [self.create_all_plugins(item) for item in config.astype(list)]
 
         return config
 
