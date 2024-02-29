@@ -9,22 +9,32 @@ on:
       - main
 
 jobs:
-  build:
+  setup:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
-
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.11'
-
-    - name: Install dependencies
+    - name: Install project dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-
-    - name: Run tests
+    - name: Install CI and Tests' dependencies
       run: |
-        python -m pytest
+        python -m pip install black==24.2.0 pytest==8.0.0
+
+  check_formatting:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run black formatting check
+      run: python -m black --check --diff dots .
+
+  run_tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run tests
+      run: python -m pytest

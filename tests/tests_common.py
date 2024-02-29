@@ -1,7 +1,6 @@
 import re
 import os
 import pytest
-import cerberus
 
 from dt import context
 from dt.util import logger
