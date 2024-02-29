@@ -9,7 +9,9 @@ from dt import dottools
 
 
 def _parse_args():
-    parser = argparse.ArgumentParser(description="Yet another yet another dotfiles management tool")
+    parser = argparse.ArgumentParser(
+        description="Yet another yet another dotfiles management tool"
+    )
 
     parser.add_argument(
         "--config-file",
