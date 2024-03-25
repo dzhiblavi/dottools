@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional
 from functools import reduce, partial
 
-from dt.util import merge
-from dt.config.config import Config, LIST_META_KEY, FROM_META_KEY
+from dots.util import merge
+from dots.config.config import Config, LIST_META_KEY, FROM_META_KEY
 
 
 def _apply_meta_kv(key, value):

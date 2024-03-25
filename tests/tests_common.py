@@ -2,8 +2,8 @@ import re
 import os
 import pytest
 
-from dt import context
-from dt.util import logger
+from dots import context
+from dots.util import logger
 
 
 def get_dot_root():

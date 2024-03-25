@@ -1,6 +1,6 @@
 import pytest
 
-from dt.util import merge
+from dots.util import merge
 from tests.tests_common import disable_log
 
 

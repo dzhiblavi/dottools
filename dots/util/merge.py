@@ -1,7 +1,7 @@
 import enum
 
-from dt.util import tools
-from dt.util.logger import logger, Tags
+from dots.util import tools
+from dots.util.logger import logger, Tags
 
 
 MERGE_OPTS_CONFIG_KEY = "_merge-opts"

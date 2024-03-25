@@ -2,10 +2,10 @@ import os
 import jinja2
 import json
 
-from dt import common
-from dt import context
-from dt.config.config import Config
-from dt.plugins import plugin
+from dots import common
+from dots import context
+from dots.config.config import Config
+from dots.plugins import plugin
 
 
 def _get_loader(template_dirs):

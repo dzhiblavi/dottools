@@ -1,8 +1,8 @@
 import abc
 
-from dt.config.config import Config
-from dt.util import tools
-from dt.util.logger import logger, Tags
+from dots.config.config import Config
+from dots.util import tools
+from dots.util.logger import logger, Tags
 
 
 class Plugin(abc.ABC):

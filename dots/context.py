@@ -1,6 +1,6 @@
 import os
 
-from dt.util import tools
+from dots.util import tools
 
 
 class Context:

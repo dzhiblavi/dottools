@@ -3,9 +3,9 @@
 import os
 import argparse
 
-from dt.util import env
-from dt.util.logger import Tags
-from dt import dottools
+from dots.util import env
+from dots.util.logger import Tags
+from dots import dottools
 
 
 def _parse_args():
@@ -70,5 +70,9 @@ def main(args):
     )
 
 
-if __name__ == "__main__":
+def cli_entrypoint():
     main(_parse_args())
+
+
+if __name__ == "__main__":
+    cli_entrypoint()

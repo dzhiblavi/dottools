@@ -3,7 +3,7 @@ import yaml
 
 from functools import partial
 
-from dt.util.logger import logger
+from dots.util.logger import logger
 
 
 def _env_tag_handler(_, node):

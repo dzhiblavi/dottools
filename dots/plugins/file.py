@@ -1,9 +1,9 @@
 import os
 
-from dt import common
-from dt.util import diff
-from dt.util.logger import logger
-from dt.plugins import plugin
+from dots import common
+from dots.util import diff
+from dots.util.logger import logger
+from dots.plugins import plugin
 
 
 class File(plugin.Plugin):

@@ -1,8 +1,8 @@
 import os
 
-from dt import common
-from dt.util.logger import logger
-from dt.plugins import plugin
+from dots import common
+from dots.util.logger import logger
+from dots.plugins import plugin
 
 
 class Dir(plugin.Plugin):

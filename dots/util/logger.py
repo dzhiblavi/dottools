@@ -4,7 +4,7 @@ import sys
 from typing import List, Any, Optional
 
 from functools import partial
-from dt.util import colors
+from dots.util import colors
 
 
 class Tags(enum.Enum):

@@ -1,6 +1,6 @@
 from pydoc import locate
 
-from dt.config.ignored import IgnoredPathsManager
+from dots.config.ignored import IgnoredPathsManager
 
 
 LIST_META_KEY = "_list"

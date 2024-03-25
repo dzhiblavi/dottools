@@ -2,10 +2,10 @@ from typing import Any, Optional, List, Dict
 
 import yaml
 
-from dt.config.config import Config
-from dt.util import env
-from dt.context import context
-from dt.plugins import plugin, file
+from dots.config.config import Config
+from dots.util import env
+from dots.context import context
+from dots.plugins import plugin, file
 
 
 def _create_prompt(

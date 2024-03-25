@@ -1,11 +1,11 @@
 import os
 import re
 
-from dt import context
-from dt.config import config, builder
-from dt.plugins import plugin
-from dt.util import tools
-from dt.util.logger import StdErrLogger, Tags, TAGS_DEPENDENCIES, logger, init_logger
+from dots import context
+from dots.config import config, builder
+from dots.plugins import plugin
+from dots.util import tools
+from dots.util.logger import StdErrLogger, Tags, TAGS_DEPENDENCIES, logger, init_logger
 
 
 def _get_must_be_enabled_tags(command):
@@ -49,7 +49,7 @@ def _get_logging_tags(name_list, command):
 
 
 def _setup_yaml_constructors(base_include_dir, eval_locals):
-    from dt.util import yaml_tools
+    from dots.util import yaml_tools
 
     def _context_rel_tag_handler(_, node):
         return context.context().rel(path=node.value)
