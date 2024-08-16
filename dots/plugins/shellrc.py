@@ -25,14 +25,6 @@ def _get_prompt(config: Config) -> str:
     )
 
 
-def _write_info_config(config: Config, out: List[str]) -> None:
-    out.append(": <<END_COMMENT\n")
-    out.append("This .shellrc is generated from the following configuration:\n")
-    js_strs = yaml.dump(config.to_dict(), indent=2).splitlines(True)
-    out.extend(js_strs)
-    out.append("END_COMMENT\n")
-
-
 def _write_scripts(config: Config, kind: str, out: List[str]) -> None:
     for script_path in config.get(kind, []).astype(list):
         with open(script_path.astype(str), "r", encoding="utf-8") as script_f:
@@ -46,7 +38,7 @@ def _write_base_env(config: Config, out: List[str]) -> None:
         env.ROOT_PATH_ENV_VAR: context().dottools_root,
     }
     for k, value in base_env.items():
-        out.append(f"export {k}={value}\n")
+        out.append(f'export {k}="{value}"\n')
     out.append("\n")
 
 
@@ -84,12 +76,11 @@ def _write_prompt(config: Config, out: List[str]) -> None:
 def _create_shellrc(config: Config) -> List[str]:
     out: List[str] = []
     _write_scripts(config, "pre", out)
-    _write_info_config(config, out)
     _write_base_env(config, out)
     _write_path(config, out)
     _write_prompt(config, out)
     _write_scripts(config, "mid", out)
-    _write_assignment(config, "export", "env", out, wrap="")
+    _write_assignment(config, "export", "env", out, wrap='"')
     _write_assignment(config, "alias", "aliases", out, wrap='"')
     _write_scripts(config, "post", out)
     return out

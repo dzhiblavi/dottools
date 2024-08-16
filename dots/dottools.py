@@ -54,15 +54,11 @@ def _setup_yaml_constructors(base_include_dir, eval_locals):
     def _context_rel_tag_handler(_, node):
         return context.context().rel(path=node.value)
 
-    def _context_dot_tag_handler(_, node):
-        return context.context().rel(path=f"dots/{node.value}")
-
     def _plugin_tag_handler(_, node):
         return f"plug.{node.value}"
 
     yaml_tools.load_common_yaml_constructors(base_include_dir, eval_locals)
     yaml_tools.load_yaml_constructor("!rel", _context_rel_tag_handler)
-    yaml_tools.load_yaml_constructor("!dot", _context_dot_tag_handler)
     yaml_tools.load_yaml_constructor("!plug", _plugin_tag_handler)
 
 
