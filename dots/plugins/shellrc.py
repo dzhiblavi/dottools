@@ -17,8 +17,7 @@ def _write_scripts(config: Config, kind: str, out: List[str]) -> None:
             with open(str_script, "r", encoding="utf-8") as script_f:
                 out.extend(script_f.readlines())
         else:
-            out.append(str_script)
-            out.append('\n')
+            out.append(f"{str_script}\n")
 
 
 def _write_base_env(config: Config, out: List[str]) -> None:
