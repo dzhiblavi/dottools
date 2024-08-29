@@ -75,7 +75,6 @@ def _apply_command(plugin_instance, command):
             if not plugin.Plugin.any_difference(plugin_instance.difference()):
                 logger().info("No difference, nothing done")
             else:
-                plugin_instance.backup()
                 plugin_instance.apply()
         else:
             assert False, f"Invalid command {command}"

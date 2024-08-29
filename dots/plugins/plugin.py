@@ -42,11 +42,6 @@ class Plugin(abc.ABC):
         """
         return []
 
-    def backup(self) -> None:
-        """
-        Should perform backup if needed
-        """
-
     def apply(self) -> None:
         """
         Applies configuration stored in self.config

@@ -46,21 +46,6 @@ class File(plugin.Plugin):
             (self._destination, diff.get_diff_lines(self._current_lines, self._lines)),
         ]
 
-    def backup(self):
-        with logger().indent("perform_backup"):
-            backup_path = self._destination + ".backup"
-
-            if os.path.isfile(self._destination):
-                common.copy_file(self._destination, backup_path)
-            else:
-                logger().warning(
-                    [
-                        "Not backing up since it does not exist",
-                        "loc\t= %s",
-                    ],
-                    self._destination,
-                )
-
     def apply(self):
         with logger().indent("perform_apply"):
             return common.write_lines(self._lines, self._destination)

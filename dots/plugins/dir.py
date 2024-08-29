@@ -45,22 +45,6 @@ class Dir(plugin.Plugin):
 
         return [(Dir.__name__, _difference + _paths_to_remove)]
 
-    def backup(self):
-        backup_dir = self._destination + ".backup"
-        destination_to_backup = self._paths_to_remove + [
-            destination for _, destination in self._diff_abspaths
-        ]
-
-        with logger().indent("perform_backup"):
-            for destination in destination_to_backup:
-                if not os.path.exists(destination):
-                    continue
-
-                backup_destination = os.path.join(
-                    backup_dir, os.path.relpath(destination, self._destination)
-                )
-                common.copy_file(destination, backup_destination)
-
     def apply(self):
         with logger().indent("perform_apply"):
             for source, destination in self._diff_abspaths:
