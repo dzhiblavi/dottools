@@ -1,20 +1,5 @@
-import yaml
-import subprocess
 from typing import List, Any, Optional, Tuple
-
-
-def has_gpu() -> bool:
-    try:
-        subprocess.check_call(
-            args=["nvidia-smi"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            shell=True,
-        )
-        return True
-
-    except subprocess.SubprocessError:
-        return False
+import yaml
 
 
 def load_yaml_by_path(path: str) -> Any:

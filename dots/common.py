@@ -115,7 +115,7 @@ def recurse_directories(
     src = os.path.abspath(src)
     dst = os.path.abspath(dst)
 
-    if any(map(lambda pattern: pattern.search(src), ignore_regex)):
+    if any(pattern.search(src) for pattern in ignore_regex):
         logger().info(
             [
                 "Ignoring path",

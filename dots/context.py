@@ -1,7 +1,5 @@
 import os
 
-from dots.util import tools
-
 
 class Context:
     def __init__(self, config_path: str, dottools_root: str, dry_run: bool) -> None:
@@ -9,7 +7,6 @@ class Context:
         self.cfg_path = config_path
         self.cfg_dir = os.path.dirname(os.path.dirname(config_path))
         self.home = os.path.expanduser("~")
-        self.has_gpu = tools.has_gpu()
         self.dottools_root = dottools_root
 
     def _join(self, head: str, path: str) -> str:
