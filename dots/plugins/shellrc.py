@@ -1,5 +1,6 @@
 from typing import Any, Optional, List, Dict
 
+import os
 import yaml
 
 from dots.config.config import Config
@@ -9,9 +10,15 @@ from dots.plugins import plugin, file
 
 
 def _write_scripts(config: Config, kind: str, out: List[str]) -> None:
-    for script_path in config.get(kind, []).astype(list):
-        with open(script_path.astype(str), "r", encoding="utf-8") as script_f:
-            out.extend(script_f.readlines())
+    for script in config.get(kind, []).astype(list):
+        str_script = script.astype(str)
+
+        if os.path.isfile(str_script):
+            with open(str_script, "r", encoding="utf-8") as script_f:
+                out.extend(script_f.readlines())
+        else:
+            out.append(str_script)
+            out.append('\n')
 
 
 def _write_base_env(config: Config, out: List[str]) -> None:
