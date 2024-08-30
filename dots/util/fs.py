@@ -99,6 +99,24 @@ def copy_file(src: str, dst: str) -> None:
         shutil.copy(src, dst)
 
 
+def link_directory(src: str, dst: str) -> None:
+    _create_parent_dir_if_not_exists(dst)
+
+    logger().log(
+        Tags.ACTION,
+        [
+            "creating a symbolic link",
+            "src\t= %s",
+            "dst\t= %s",
+        ],
+        src,
+        dst,
+    )
+
+    if not context().dry_run:
+        os.symlink(src, dst, target_is_directory=True)
+
+
 def files_difference(src: str, dst: str):
     return diff.get_diff_lines(
         read_lines_or_empty(dst),

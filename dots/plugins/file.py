@@ -41,8 +41,13 @@ class File(plugin.Plugin):
         self._lines = self._lines_source()
 
     def difference(self):
+        d = diff.get_diff_lines(self._current_lines, self._lines)
+
+        if not d:
+            return []
+
         return [
-            (self._destination, diff.get_diff_lines(self._current_lines, self._lines)),
+            f"diff for file {self._destination}:\n{''.join(d)}",
         ]
 
     def apply(self):

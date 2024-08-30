@@ -49,31 +49,26 @@ class Plugin(abc.ABC):
 
     @staticmethod
     def log_difference(difference) -> None:
-        for tag, diff in difference:
-            with logger().indent(label=f"diff({tag})"):
-                if not diff:
-                    logger().info("No difference")
-                    continue
+        if not difference:
+            logger().info("No difference")
+            return
 
-                if isinstance(diff[0], str):
-                    logger().log(
-                        Tags.DIFF,
-                        "".join(diff).replace("%", "%%"),
-                    )
-                else:
-                    Plugin.log_difference(diff)
+        if isinstance(difference, list):
+            logger().log(
+                Tags.DIFF,
+                "\n".join(difference).replace("%", "%%"),
+            )
+            return
+
+        logger().log(Tags.DIFF, str(difference))
 
     @staticmethod
     def any_difference(difference) -> bool:
-        for _, diff in difference:
-            if not diff:
-                continue
+        if not difference:
+            return False
 
-            if isinstance(diff[0], str):
-                return True
-
-            if Plugin.any_difference(diff):
-                return True
+        if isinstance(difference, list):
+            return True
 
         return False
 
