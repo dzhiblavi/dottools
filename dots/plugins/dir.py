@@ -1,6 +1,6 @@
 import os
 
-from dots import common
+from dots.util import fs
 from dots.util.logger import logger
 from dots.plugins import plugin
 
@@ -20,13 +20,13 @@ class Dir(plugin.Plugin):
         _paths_to_remove = []
 
         def diff_file(source_path, destination_path):
-            diff = common.files_difference(source_path, destination_path)
+            diff = fs.files_difference(source_path, destination_path)
             _difference.append((destination_path, diff))
 
             if diff:
                 self._diff_abspaths.append((source_path, destination_path))
 
-        common.recurse_directories(
+        fs.recurse_directories(
             self._source, self._destination, diff_file, self._ignore_regex
         )
 
@@ -36,7 +36,7 @@ class Dir(plugin.Plugin):
                 self._paths_to_remove.append(destination_path)
 
         if os.path.exists(self._destination):
-            common.recurse_directories(
+            fs.recurse_directories(
                 self._destination,
                 self._source,
                 to_remove,
@@ -48,10 +48,10 @@ class Dir(plugin.Plugin):
     def apply(self):
         with logger().indent("perform_apply"):
             for source, destination in self._diff_abspaths:
-                common.copy_file(source, destination)
+                fs.copy_file(source, destination)
 
             for destination in self._paths_to_remove:
-                common.try_remove(destination)
+                fs.try_remove(destination)
 
 
 plugin.registry().register(Dir)

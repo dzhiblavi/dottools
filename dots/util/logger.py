@@ -1,7 +1,7 @@
 import abc
 import enum
 import sys
-from typing import List, Any, Optional
+from typing import Any, Optional
 
 from functools import partial
 from dots.util import colors
@@ -79,7 +79,7 @@ class _Silence:
 class Logger(abc.ABC):
     def __init__(self, enabled_tags=None, use_colors=True) -> None:
         self._indent: int = 0
-        self._labels: List[str] = []
+        self._labels = []
         self._use_colors: bool = use_colors
         self._enabled_tags = enabled_tags or []
 
@@ -115,7 +115,7 @@ class Logger(abc.ABC):
             )
         )
 
-    def _build_log_args(self, preamble: str, fmt, *args) -> List[Any]:
+    def _build_log_args(self, preamble: str, fmt, *args):
         return [preamble + self._fmt("| " + " " * self._indent, fmt), *args]
 
     def log(self, tag: Tags, fmt, *args):

@@ -1,7 +1,4 @@
-from typing import Any, Optional, List, Dict
-
 import os
-import yaml
 
 from dots.config.config import Config
 from dots.util import env
@@ -9,7 +6,7 @@ from dots.context import context
 from dots.plugins import plugin, file
 
 
-def _write_scripts(config: Config, kind: str, out: List[str]) -> None:
+def _write_scripts(config: Config, kind: str, out) -> None:
     for script in config.get(kind, []).astype(list):
         str_script = script.astype(str)
 
@@ -20,7 +17,7 @@ def _write_scripts(config: Config, kind: str, out: List[str]) -> None:
             out.append(f"{str_script}\n")
 
 
-def _write_base_env(config: Config, out: List[str]) -> None:
+def _write_base_env(config: Config, out) -> None:
     base_env = {
         env.CONFIG_FILE_PATH_ENV_VAR: context().cfg_path,
         env.HOST_NAME_ENV: config.get("host-name", "unknown").astype(str),
@@ -31,9 +28,7 @@ def _write_base_env(config: Config, out: List[str]) -> None:
     out.append("\n")
 
 
-def _write_assignment(
-    config: Config, prefix: str, field: str, out: List[str], wrap=None
-):
+def _write_assignment(config: Config, prefix: str, field: str, out, wrap=None):
     if wrap is None:
         wrap = ""
 
@@ -42,7 +37,7 @@ def _write_assignment(
     out.append("\n")
 
 
-def _write_path(config: Config, out: List[str]) -> None:
+def _write_path(config: Config, out) -> None:
     paths = config.get("path", []).astype(list)
 
     if not paths:
@@ -55,10 +50,10 @@ def _write_path(config: Config, out: List[str]) -> None:
     out.append(f"export PATH={path_env}:${{PATH}}\n")
 
 
-def _create_shellrc(config: Config) -> List[str]:
+def _create_shellrc(config: Config):
     minimal = config.getp("minimal", False).astype(bool)
+    out = []
 
-    out: List[str] = []
     _write_scripts(config, "pre", out)
     if not minimal:
         _write_base_env(config, out)

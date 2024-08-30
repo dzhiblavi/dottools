@@ -1,9 +1,11 @@
 import os
 import re
 
-from dots import context
-from dots.config import config, builder
+from dots.yaml import loader
+from dots.config import builder
 from dots.plugins import plugin
+
+from dots.context import init_context, Context, context
 from dots.util import tools
 from dots.util.logger import StdErrLogger, Tags, TAGS_DEPENDENCIES, logger, init_logger
 
@@ -49,17 +51,15 @@ def _get_logging_tags(name_list, command):
 
 
 def _setup_yaml_constructors(base_include_dir, eval_locals):
-    from dots.util import yaml_tools
-
     def _context_rel_tag_handler(_, node):
-        return context.context().rel(path=node.value)
+        return context().rel(path=node.value)
 
     def _plugin_tag_handler(_, node):
         return f"plug.{node.value}"
 
-    yaml_tools.load_common_yaml_constructors(base_include_dir, eval_locals)
-    yaml_tools.load_yaml_constructor("!rel", _context_rel_tag_handler)
-    yaml_tools.load_yaml_constructor("!plug", _plugin_tag_handler)
+    loader.add_common_yaml_constructors(base_include_dir, eval_locals)
+    loader.add_yaml_constructor("!rel", _context_rel_tag_handler)
+    loader.add_yaml_constructor("!plug", _plugin_tag_handler)
 
 
 def _apply_command(plugin_instance, command):
@@ -97,8 +97,8 @@ def run(
         )
     )
 
-    context.init_context(
-        context.Context(
+    init_context(
+        Context(
             config_path=config_path,
             dottools_root=os.path.realpath(dottools_root),
             dry_run=command in {"config", "diff", "plan", "compile"},
@@ -106,19 +106,17 @@ def run(
     )
 
     _setup_yaml_constructors(
-        base_include_dir=context.context().cfg_dir,
+        base_include_dir=context().cfg_dir,
         eval_locals={
-            "ctx": context.context(),
+            "ctx": context(),
         },
     )
 
-    cfg = builder.create(tools.load_yaml_by_path(config_path))
+    yml = loader.load_rich_yaml_from(config_path)
+    cfg = builder.create_config(yml)
 
-    if command in {"config"}:
-        logger().log(
-            Tags.OUTPUT,
-            [""] + tools.safe_dump_yaml_lines(cfg.to_dict()),
-        )
+    if command == "dump":
+        print(tools.safe_dump_yaml(yml))
         return
 
     matcher = re.compile(field)

@@ -1,6 +1,6 @@
 import os
 import shutil
-from typing import List, Callable, Any
+from typing import Callable, Any
 
 from dots.context import context
 from dots.util import diff
@@ -47,7 +47,7 @@ def try_remove(file: str) -> None:
             os.unlink(file)
 
 
-def read_lines_or_empty(file: str) -> List[str]:
+def read_lines_or_empty(file: str):
     file = os.path.expanduser(file)
 
     if not os.path.exists(file):
@@ -64,7 +64,7 @@ def read_lines_or_empty(file: str) -> List[str]:
         return list(file_obj.readlines())
 
 
-def write_lines(lines: List[str], path: str) -> None:
+def write_lines(lines, path: str) -> None:
     _create_parent_dir_if_not_exists(path)
 
     logger().log(
@@ -99,7 +99,7 @@ def copy_file(src: str, dst: str) -> None:
         shutil.copy(src, dst)
 
 
-def files_difference(src: str, dst: str) -> List[str]:
+def files_difference(src: str, dst: str):
     return diff.get_diff_lines(
         read_lines_or_empty(dst),
         read_lines_or_empty(src),
@@ -110,7 +110,7 @@ def recurse_directories(
     src: str,
     dst: str,
     function: Callable[[str, str], None],
-    ignore_regex: List[Any],
+    ignore_regex,
 ):
     src = os.path.abspath(src)
     dst = os.path.abspath(dst)

@@ -1,9 +1,9 @@
 import os
-import jinja2
 import json
+import jinja2
 
-from dots import common
 from dots import context
+from dots.util import fs
 from dots.config.config import Config
 from dots.plugins import plugin
 
@@ -38,7 +38,7 @@ class Generate(plugin.Plugin):
 
     def build(self):
         template = self._environment.from_string(
-            "".join(common.read_lines_or_empty(self._template))
+            "".join(fs.read_lines_or_empty(self._template))
         )
 
         def map_line(line):

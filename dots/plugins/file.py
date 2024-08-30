@@ -1,7 +1,6 @@
 import os
 
-from dots import common
-from dots.util import diff
+from dots.util import diff, fs
 from dots.util.logger import logger
 from dots.plugins import plugin
 
@@ -22,7 +21,7 @@ class File(plugin.Plugin):
         elif source.istype(str):
             source_path = source.astype(str)
             assert os.path.isfile(source_path), f"Path {source_path} is not a file"
-            self._lines_source = lambda: common.read_lines_or_empty(source_path)
+            self._lines_source = lambda: fs.read_lines_or_empty(source_path)
 
         elif source.istype(dict):
             self._plugin = plugin.registry().create_plugin(source)
@@ -38,7 +37,7 @@ class File(plugin.Plugin):
         return self._plugin._to_dict_extra()
 
     def build(self):
-        self._current_lines = common.read_lines_or_empty(self._destination)
+        self._current_lines = fs.read_lines_or_empty(self._destination)
         self._lines = self._lines_source()
 
     def difference(self):
@@ -48,7 +47,7 @@ class File(plugin.Plugin):
 
     def apply(self):
         with logger().indent("perform_apply"):
-            return common.write_lines(self._lines, self._destination)
+            return fs.write_lines(self._lines, self._destination)
 
 
 plugin.registry().register(File)

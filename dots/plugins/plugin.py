@@ -85,10 +85,6 @@ class _PluginRegistry:
     def register(self, clazz) -> None:
         name: str = clazz.__name__
 
-        assert name[
-            0
-        ].isupper(), f"Plugin name should start with capital character found {name}"
-
         assert (
             name not in self._name_to_clazz
         ), f"Plugin with name {name} is already registered as {clazz}"

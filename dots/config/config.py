@@ -1,10 +1,7 @@
 from pydoc import locate
 
 from dots.config.ignored import IgnoredPathsManager
-
-
-LIST_META_KEY = "_list"
-FROM_META_KEY = "_from"
+from dots.yaml.enrich import LIST_META_KEY
 
 
 class _ObjectTree:

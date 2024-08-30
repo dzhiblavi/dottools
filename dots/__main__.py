@@ -48,7 +48,7 @@ def _parse_args():
     )
 
     subparsers = parser.add_subparsers(title="Commands", dest="command")
-    subparsers.add_parser("config", help="Print compiled configuration")
+    subparsers.add_parser("dump", help="Dump supplied yaml file")
     subparsers.add_parser("diff", help="Show difference")
     subparsers.add_parser("apply", help="Apply configuration")
     subparsers.add_parser("compile", help="Show available plugins' configuration")
@@ -64,7 +64,7 @@ def main(args):
         dottools_root=args.root,
         config_file_path=args.config_file,
         field=args.field,
-        command=args.command or "config",
+        command=args.command or "dump",
         color=args.color,
         log=args.log,
     )
